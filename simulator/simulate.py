@@ -104,7 +104,7 @@ def main():
         "-n",
         "--num-updates",
         type=int,
-        default=100,
+        default=10,
         help="Number of updates to simulate",
     )
     parser.add_argument(
