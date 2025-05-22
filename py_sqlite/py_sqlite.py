@@ -1,4 +1,5 @@
 import argparse
+import tempfile
 
 import events
 from order_book import OrderBook, UnknownOrder
@@ -15,49 +16,56 @@ def main():
         default="-",
         help="File containing the events.",
     )
+    parser.add_argument(
+        "--db-file",
+        type=argparse.FileType("r"),
+        default=None,
+        help="Database file to use for the order book. Defaults to a temporary file.",
+    )
 
     args = parser.parse_args()
 
-    order_book = OrderBook()
+    if args.db_file is None:
+        args.db_file = tempfile.NamedTemporaryFile(delete=False)
+
+    order_book = OrderBook(args.db_file.name)
     for event in args.events_file:
         match events.parse_event(event.strip()):
             case events.CreateOrder(side, quantity, price):
-                new_id = order_book.create_order(side, price, quantity)
-                print(f"Creating order: {side} {quantity} @ {price} with ID {new_id}")
+                _new_id = order_book.create_order(side, price, quantity)
 
             case events.UpdateOrder(order_id, price):
-                print(f"Updating order {order_id} to price {price}")
                 try:
                     order = order_book.update_order(order_id, price)
-                    print(f"Updated order: {order}")
-                except UnknownOrder as e:
-                    print(f"Error: {e}")
+                except UnknownOrder:
+                    pass
 
             case events.RemoveOrder(order_id):
-                print(f"Removing order {order_id}")
                 try:
                     order = order_book.remove_order(order_id)
-                    print(f"Removed order: {order}")
-                except UnknownOrder as e:
-                    print(f"Error: {e}")
+                except UnknownOrder:
+                    pass
+
+            case events.Bids():
+                bids = order_book.bids()
+                if not bids:
+                    continue
+                print(f"Bids")
+                for order in bids:
+                    print(f"\t{order}")
+                print()
+
+            case events.Asks():
+                asks = order_book.asks()
+                if not asks:
+                    continue
+                print(f"Asks")
+                for order in asks:
+                    print(f"\t{order}")
+                print()
 
             case _:
                 print(f"Unknown event: {event.strip()}")
-
-    print("\nOrder Book:")
-    for order in order_book.all_orders():
-        print(order)
-    print()
-
-    print("Bids:")
-    for order in order_book.bids():
-        print(order)
-    print()
-
-    print("Asks:")
-    for order in order_book.asks():
-        print(order)
-    print()
 
 
 if __name__ == "__main__":

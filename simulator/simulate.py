@@ -18,7 +18,7 @@ class CreateOrder:
     quantity: int
     price: float
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"CREATE {self.side} {self.quantity} {self.price}"
 
 
@@ -29,7 +29,7 @@ class UpdateOrder:
     order_id: int
     price: float
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"UPDATE {self.order_id} {self.price}"
 
 
@@ -39,11 +39,23 @@ class RemoveOrder:
 
     order_id: int
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"REMOVE {self.order_id}"
 
 
-Event = CreateOrder | UpdateOrder | RemoveOrder
+@dataclass
+class Bids:
+    def __str__(self) -> str:
+        return "BIDS"
+
+
+@dataclass
+class Asks:
+    def __str__(self) -> str:
+        return "ASKS"
+
+
+Event = CreateOrder | UpdateOrder | RemoveOrder | Bids | Asks
 
 
 def sample_side(state: SimulatorState) -> str:
@@ -87,13 +99,28 @@ def sample_remove_order(state: SimulatorState) -> RemoveOrder:
 
 def sample_event(state: SimulatorState) -> Event:
     """Sample an event."""
-    event_type = random.choice([CreateOrder, UpdateOrder, RemoveOrder])
-    if event_type == CreateOrder:
-        return sample_new_order(state)
-    elif event_type == UpdateOrder:
-        return sample_update_order(state)
-    else:
-        return sample_remove_order(state)
+    event_type = random.choice(
+        [
+            "CREATE",
+            "UPDATE",
+            "REMOVE",
+            "BIDS",
+            "ASKS",
+        ]
+    )
+    match event_type:
+        case "CREATE":
+            return sample_new_order(state)
+        case "UPDATE":
+            return sample_update_order(state)
+        case "REMOVE":
+            return sample_remove_order(state)
+        case "BIDS":
+            return Bids()
+        case "ASKS":
+            return Asks()
+        case _:
+            raise ValueError(f"Unknown event type: {event_type}")
 
 
 def main():
@@ -120,8 +147,7 @@ def main():
 
     state = SimulatorState()
     for _ in range(args.num_updates):
-        event = sample_event(state)
-        print(event)
+        print(sample_event(state))
 
 
 if __name__ == "__main__":

@@ -13,6 +13,22 @@ class Order:
     price: int
     quantity: int
 
+    def __str__(self) -> str:
+        return f"{self.order_type} {self.price} {self.quantity}"
+
+    @classmethod
+    def from_row(cls, row: tuple[int, str, int, int]) -> Self:
+        """
+        Create an Order instance from a database row.
+        """
+        return cls(
+            # SQLite uses 1-based indexing; we use 0-based indexing
+            order_id=row[0] - 1,
+            order_type=row[1],
+            price=row[2],
+            quantity=row[3],
+        )
+
 
 class OrderBookError(Exception):
     """Custom exception for OrderBook errors."""
@@ -94,7 +110,7 @@ class OrderBook:
         cursor.execute(insert_sql, (order_type, price, quantity))
         self.__conn.commit()
         assert cursor.lastrowid is not None, "Failed to get last row ID"
-        return cursor.lastrowid
+        return cursor.lastrowid - 1  # Convert to 0-based indexing
 
     def get_order(self, order_id: int) -> Order:
         """
@@ -106,11 +122,12 @@ class OrderBook:
         WHERE id = ?;
         """
         cursor = self.__conn.cursor()
-        cursor.execute(select_sql, (order_id,))
+        # SQLite uses 1-based indexing
+        cursor.execute(select_sql, (order_id + 1,))
         row = cursor.fetchone()
         if not row:
             raise UnknownOrder(order_id)
-        return Order(*row)
+        return Order.from_row(row)
 
     def update_order(self, order_id: int, price: int) -> Order:
         """
@@ -121,11 +138,11 @@ class OrderBook:
         SET price = ?
         WHERE id = ?;
         """
-        self.__execute_sql(update_sql, (price, order_id))
+        self.__execute_sql(update_sql, (price, order_id + 1))
         cursor = self.__conn.cursor()
         cursor.execute(
             "SELECT id, order_type, price, quantity FROM order_book WHERE id = ?",
-            (order_id,),
+            (order_id + 1,),
         )
         return self.get_order(order_id)
 
@@ -139,7 +156,7 @@ class OrderBook:
         """
         cursor = self.__conn.cursor()
         order = self.get_order(order_id)
-        cursor.execute(delete_sql, (order_id,))
+        cursor.execute(delete_sql, (order_id + 1,))
         self.__conn.commit()
 
         return order
@@ -157,7 +174,7 @@ class OrderBook:
         cursor = self.__conn.cursor()
         cursor.execute(select_sql)
         rows = cursor.fetchall()
-        return [Order(*row) for row in rows]
+        return [Order.from_row(row) for row in rows]
 
     def asks(self) -> list[Order]:
         """
@@ -172,7 +189,7 @@ class OrderBook:
         cursor = self.__conn.cursor()
         cursor.execute(select_sql)
         rows = cursor.fetchall()
-        return [Order(*row) for row in rows]
+        return [Order.from_row(row) for row in rows]
 
     def all_orders(self) -> list[Order]:
         """
@@ -186,4 +203,4 @@ class OrderBook:
         cursor = self.__conn.cursor()
         cursor.execute(select_sql)
         rows = cursor.fetchall()
-        return [Order(*row) for row in rows]
+        return [Order.from_row(row) for row in rows]

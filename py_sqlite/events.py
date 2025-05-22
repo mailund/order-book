@@ -25,7 +25,17 @@ class RemoveOrder:
     order_id: int
 
 
-Event = CreateOrder | UpdateOrder | RemoveOrder
+@dataclass
+class Bids:
+    """Bids message."""
+
+
+@dataclass
+class Asks:
+    """Asks message."""
+
+
+Event = CreateOrder | UpdateOrder | RemoveOrder | Bids | Asks
 
 
 def parse_event(event: str) -> Event:
@@ -42,5 +52,9 @@ def parse_event(event: str) -> Event:
         return UpdateOrder(int(parts[1]), int(parts[2]))
     elif parts[0] == "REMOVE":
         return RemoveOrder(int(parts[1]))
+    elif parts[0] == "BIDS":
+        return Bids()
+    elif parts[0] == "ASKS":
+        return Asks()
     else:
         raise ValueError(f"Unknown event type: {parts[0]}")
