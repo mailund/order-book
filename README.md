@@ -91,7 +91,7 @@ bids :: OrderBook -> List[Order]
 asks :: OrderBook -> List[Order]
 ```
 
-where `bids` returns the list of buy orders and `asks` returns the list of sell orders. The orders should be sorted by price in descending order for bids and ascending order for asks.
+where `bids` returns the list of buy orders and `asks` returns the list of sell orders. The orders should be sorted by price and then quantity in descending order for bids and ascending order for asks.
 
 When the events contain a `BIDS` query, and the `bids` query is non-empty, write `Bids` and the Side, Price and Quantity of the orders from the `bids` query, correctly sorted. When the events contain an `ASKS` query, write `Asks` and the Side, Price and Quantity of the orders from the `asks` query, correctly sorted.
 

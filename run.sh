@@ -4,6 +4,7 @@ autoload -Uz colors && colors
 
 # Default number of events
 N=1000
+keep_files=false
 
 # Parse options
 while [[ $# -gt 0 ]]; do
@@ -11,6 +12,10 @@ while [[ $# -gt 0 ]]; do
     -n|--num)
       N=$2
       shift 2
+      ;;
+    --keep-files)
+      keep_files=true
+      shift
       ;;
     -*)
       echo "Unknown option: $1" >&2
@@ -22,10 +27,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-
 tempdir=$(mktemp -d)
 test_data="$tempdir/test_data.txt"
-trap 'rm -rf "$tempdir"' EXIT
+
+if [[ $keep_files == false ]]; then
+  trap 'rm -rf "$tempdir"' EXIT
+fi
+
 
 # Generate test data
 print -P "%F{cyan}Simulating data with N=$N...%f"

@@ -83,6 +83,12 @@ class OrderBook:
         );
         """
         self.__execute_sql(create_table_sql)
+        self.__execute_sql(
+            """
+            CREATE INDEX IF NOT EXISTS idx_order_type_price 
+            ON order_book(order_type, price);
+            """
+        )
 
     def __del__(self):
         if self.__conn:
@@ -169,7 +175,7 @@ class OrderBook:
         SELECT id, order_type, price, quantity
         FROM order_book
         WHERE order_type = 'Buy'
-        ORDER BY price DESC;
+        ORDER BY price DESC, quantity DESC;
         """
         cursor = self.__conn.cursor()
         cursor.execute(select_sql)
@@ -184,7 +190,7 @@ class OrderBook:
         SELECT id, order_type, price, quantity
         FROM order_book
         WHERE order_type = 'Sell'
-        ORDER BY price ASC;
+        ORDER BY price ASC, quantity ASC;
         """
         cursor = self.__conn.cursor()
         cursor.execute(select_sql)

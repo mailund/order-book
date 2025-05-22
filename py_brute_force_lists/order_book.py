@@ -66,11 +66,11 @@ class OrderBook:
         orders = [
             order for order in self.__orders.values() if order.order_type == "Buy"
         ]
-        return sorted(orders, key=lambda x: x.price, reverse=True)
+        return sorted(orders, key=lambda x: (x.price, x.quantity), reverse=True)
 
     def asks(self) -> list[Order]:
         """Get all asks."""
         orders = [
             order for order in self.__orders.values() if order.order_type == "Sell"
         ]
-        return sorted(orders, key=lambda x: x.price)
+        return sorted(orders, key=lambda x: (x.price, x.quantity))
