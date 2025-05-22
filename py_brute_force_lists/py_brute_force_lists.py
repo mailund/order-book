@@ -1,7 +1,4 @@
 import argparse
-import atexit
-import os
-import tempfile
 
 import events
 from order_book import OrderBook, UnknownOrder
