@@ -42,8 +42,9 @@ python3 simulator/simulate.py -n "$N" -o "$test_data"
 # Define associative array of implementations
 typeset -A versions
 versions=(
-  brute "PYTHONPATH=py_brute_force_lists python3 py_brute_force_lists/py_brute_force_lists.py"
-  sqlite "PYTHONPATH=py_sqlite python3 py_sqlite/py_sqlite.py"
+  py_brute "PYTHONPATH=py_brute_force_lists python3 py_brute_force_lists/py_brute_force_lists.py"
+  py_sqlite "PYTHONPATH=py_sqlite python3 py_sqlite/py_sqlite.py"
+  py_lazy "PYTHONPATH=py_lazy_sort python3 py_lazy_sort/py_lazy_sort.py"
 )
 typeset -A runtimes
 
@@ -63,12 +64,12 @@ done
 echo
 for name in "${(@k)versions}"; do
   [[ $name == "brute" ]] && continue  # Skip diffing brute against itself
-  print -P "%F{cyan}Running diff for $name vs brute...%f"
-  diff "$tempdir/${name}_output.txt" "$tempdir/brute_output.txt" > "$tempdir/${name}_diff.txt"
+  print -P "%F{cyan}Running diff for $name vs py_brute...%f"
+  diff "$tempdir/${name}_output.txt" "$tempdir/py_brute_output.txt" > "$tempdir/${name}_diff.txt"
   if [[ $? -eq 0 ]]; then
-    print -P "%F{green}✅ $name output matches brute.%f"
+    print -P "%F{green}✅ $name output matches py_brute.%f"
   else
-    print -P "%F{red}✘ $name output differs from brute!%f"
+    print -P "%F{red}✘ $name output differs from py_brute!%f"
     print -P "%F{red}↳ See diff: $tempdir/${name}_diff.txt%f"
     echo "First few lines of diff:"
     head -n 5 "$tempdir/${name}_diff.txt" | sed 's/^/    /'
@@ -78,11 +79,11 @@ done
 # Show timing summary
 echo
 print -P "%F{cyan}⏱ Execution time summary:%f"
-print "+---------+-----------+"
-print "| Version | Time (s)  |"
-print "+---------+-----------+"
+print "+-----------------+-----------+"
+print "| Version         | Time (s)  |"
+print "+-----------------+-----------+"
 for name in ${(k)versions}; do
-  printf "| %-7s | %9s |\n" "$name" "$runtimes[$name]"
+  printf "| %-15s | %9s |\n" "$name" "$runtimes[$name]"
 done
-print "+---------+-----------+"
+print "+-----------------+-----------+"
 
