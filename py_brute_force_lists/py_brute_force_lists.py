@@ -18,20 +18,10 @@ def main():
         default="-",
         help="File containing the events.",
     )
-    parser.add_argument(
-        "--db-file",
-        type=argparse.FileType("r"),
-        default=None,
-        help="Database file to use for the order book. Defaults to a temporary file.",
-    )
 
     args = parser.parse_args()
 
-    if args.db_file is None:
-        args.db_file = tempfile.NamedTemporaryFile(delete=False)
-        atexit.register(lambda: os.remove(args.db_file.name))
-
-    order_book = OrderBook(args.db_file.name)
+    order_book = OrderBook()
     for event in args.events_file:
         match events.parse_event(event.strip()):
             case events.CreateOrder(side, quantity, price):

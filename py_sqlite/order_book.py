@@ -1,6 +1,6 @@
 import sqlite3
 from dataclasses import dataclass
-from sqlite3 import Connection, Error
+from sqlite3 import Error
 from typing import Any, Self
 
 

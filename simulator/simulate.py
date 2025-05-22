@@ -147,7 +147,7 @@ def main():
 
     state = SimulatorState()
     for _ in range(args.num_updates):
-        print(sample_event(state))
+        print(sample_event(state), file=args.output)
 
 
 if __name__ == "__main__":
