@@ -1,4 +1,4 @@
-import heapq
+import sys
 from dataclasses import dataclass
 from typing import Any
 from typing import Callable as Fn
@@ -41,63 +41,72 @@ class SortedTable:
         self.__key: Fn[[Order], Any] = key
         # the tables maps order_id to indices in the sorted and waiting lists
         self.__sorted_index: dict[int, int] = {}
-        self.__waiting_index: dict[int, int] = {}
         self.__sorted: list[Order] = []
-        self.__waiting: list[Order] = []
+        self.__waiting: dict[int, Order] = {}
 
     def __contains__(self, order_id: int) -> bool:
         """Check if an order exists by ID."""
-        return order_id in self.__sorted_index or order_id in self.__waiting_index
+        # O(1)
+        return order_id in self.__sorted_index or order_id in self.__waiting
 
     def __getitem__(self, order_id: int) -> Order:
         """Get an order by ID."""
-        if order_id in self.__waiting_index:
-            return self.__waiting[self.__waiting_index[order_id]]
+        # O(1)
+        if order_id in self.__waiting:
+            return self.__waiting[order_id]
         elif order_id in self.__sorted_index:
             return self.__sorted[self.__sorted_index[order_id]]
         raise UnknownOrder(order_id)
 
     def __setitem__(self, order_id: int, order: Order) -> None:
         """Set an order by ID."""
-        if order_id in self.__waiting_index:
-            self.__waiting[self.__waiting_index[order_id]] = order
-        elif order_id in self.__sorted_index:
+        # O(1)
+        if order_id in self.__sorted_index:
             del self.__sorted_index[order_id]
-            self.__waiting.append(order)
-            self.__waiting_index[order_id] = len(self.__waiting) - 1
-        else:
-            self.__waiting.append(order)
-            self.__waiting_index[order_id] = len(self.__waiting) - 1
+        self.__waiting[order_id] = order
 
     def __delitem__(self, order_id: int) -> None:
         """Delete an order by ID."""
-        if order_id in self.__waiting_index:
-            del self.__waiting_index[order_id]
+        # O(1)
+        if order_id in self.__waiting:
+            del self.__waiting[order_id]
         if order_id in self.__sorted_index:
             del self.__sorted_index[order_id]
 
-    def __update(self) -> None:
-        """Update the sorted list."""
-        x = [
-            (self.__key(o), o)
-            for o in self.__sorted
-            if o.order_id in self.__sorted_index
-        ]
-        y = [
-            (self.__key(o), o)
-            for o in self.__waiting
-            if o.order_id in self.__waiting_index
-        ]
-        all_sorted = list(o for _, o in heapq.merge(x, sorted(y)))
-        self.__sorted = all_sorted  # type: ignore
-        self.__sorted_index = {o.order_id: i for i, o in enumerate(all_sorted)}
-        self.__waiting = []
-        self.__waiting_index = {}
+    def __merge(self, x: list[Order], y: list[Order]) -> list[Order]:
+        """Merge two sorted lists."""
+        merged: list[Order] = []
+        i, j = 0, 0
+        while i < len(x) and j < len(y):
+            if self.__key(x[i]) < self.__key(y[j]):
+                merged.append(x[i])
+                i += 1
+            else:
+                merged.append(y[j])
+                j += 1
+        merged.extend(x[i:])
+        merged.extend(y[j:])
+        return merged
 
     def items(self) -> list[Order]:
-        """Iterate over the sorted orders."""
-        self.__update()
-        return self.__sorted  # type: ignore
+        """Update the sorted list."""
+        # O(n log n), or
+        #
+        # O(n[dirty] + n[sorted]          -- for cleaning dirty
+        #   + n[waiting] log n[waiting]   -- for sorting waiting
+        #   + n[sorted] + n[waiting])     -- for merging
+        #
+        # but with a sizable overhead for the Python implementation
+
+        clean_sorted = [o for o in self.__sorted if o.order_id in self.__sorted_index]
+        waiting = sorted(self.__waiting.values(), key=self.__key)
+        merged = self.__merge(clean_sorted, waiting)
+
+        self.__sorted = merged
+        self.__sorted_index = {o.order_id: i for i, o in enumerate(self.__sorted)}
+        self.__waiting = {}
+
+        return self.__sorted
 
 
 class OrderBook:
