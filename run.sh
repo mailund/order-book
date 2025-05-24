@@ -81,6 +81,7 @@ versions=(
   py_lazy            "PYTHONPATH=python/py_lazy_sort python3 python/py_lazy_sort/py_lazy_sort.py"
   c_unsorted         "c/unsorted_lists/unsorted_lists"
   c_unsorted_id_hash "c/unsorted_id_hash/unsorted_id_hash"
+  c_radix_on_query   "c/radix_sorted_on_query/radix_sorted_on_query"
 )
 
 # Handle --list

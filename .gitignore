@@ -180,3 +180,4 @@ test.txt
 test-small.txt
 c/unsorted_lists/unsorted_lists
 c/unsorted_id_hash/unsorted_id_hash
+c/radix_sorted_on_query/radix_sorted_on_query
