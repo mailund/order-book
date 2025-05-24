@@ -153,7 +153,11 @@ for name in "${(@k)versions}"; do
 
   printf "  🛠  Executing %-25s ... " "$name"
   start=$(python3 -c 'import time; print(time.time())')
-  eval "${versions[$name]} < \"$test_data\"" > "$tempdir/${name}_output.txt"
+  if [[ $compare == false ]]; then
+    eval "${versions[$name]} < \"$test_data\"" > /dev/null
+  else
+    eval "${versions[$name]} < \"$test_data\"" > "$tempdir/${name}_output.txt"
+  fi
   end=$(python3 -c 'import time; print(time.time())')
   duration=$(printf "%.2f" "$(echo "$end - $start" | bc)")
   runtimes[$name]=$duration
