@@ -6,21 +6,20 @@ The task is to implement a simple orderbook. The orderbook should be able to han
 
 We define a limit order as an element of
 
-```
-Order = Id x Side x Quantity x Price
+```haskell
+type Order = Id x Side x Quantity x Price
 ```
 
 where
 
-```
-Id = Natural number ({1, 2, 3, ...})
-Side = {Buy, Sell}
-Quantity = Natural number
-Price = Integers in the range (-1_000_000, 1_000_000)
+```haskell
+type Id = Natural number ({1, 2, 3, ...})
+type Side = {Buy, Sell}
+type Quantity = Natural number
+type Price = Integers in the range (-1_000_000, 1_000_000)
 ```
 
 An `OrderBook` contains a set of orders.
-
 
 ## Orders from Venue
 
@@ -40,7 +39,7 @@ removeOrder (Id)
 
 The stream of events is formatted as
 
-```
+```txt
 CREATE Sell 821016 960816
 UPDATE 0 -475438
 UPDATE 0 273043
@@ -52,9 +51,6 @@ UPDATE 2 572979
 REMOVE 0
 REMOVE 2
 ```
-
-
-
 
 Implement operations handling these events:
 
@@ -71,16 +67,15 @@ removeOrder :: OrderBook -> Id -> (OrderBook, Order)
 
 There can be references to IDs that have either not been created yet or have been removed. The system should handle these gracefully. The system should not crash or throw an error. Instead, it should ignore the event and continue processing the rest of the stream.
 
-
 Interspersed with the events will be querys of either
 
-```
+```txt
 BIDS
 ```
 
 or
 
-```
+```txt
 ASKS
 ```
 
@@ -97,7 +92,7 @@ When the events contain a `BIDS` query, and the `bids` query is non-empty, write
 
 Example output:
 
-```
+```txt
 Asks
 	Sell -59661 483886
 	Sell 257327 654506

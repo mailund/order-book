@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "default",
+            "includePath": [
+                "${workspaceFolder}/c/**"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/c"
+                ]
+            }
+        }
+    ],
+    "version": 4
+}

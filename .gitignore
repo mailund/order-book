@@ -175,3 +175,7 @@ cython_debug/
 .venv
 lazy.prof
 test.txt
+*.o
+*.a
+test-small.txt
+c/unsorted_lists/unsorted_lists
