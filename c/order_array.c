@@ -54,15 +54,20 @@ static inline void swap(Order *a, Order *b) {
   *b = tmp;
 }
 
-void remove_by_id(OrderArray *arr, int order_id) {
-  Order *order = order_by_id(arr, order_id);
-  if (!order)
-    return;
-
+void remove_by_index(OrderArray *arr, size_t index) {
+  Order *order = &arr->data[index];
   Order *last_order = &arr->data[arr->size - 1];
   if (order != last_order) {
     swap(order, last_order);
   }
 
   arr->size--;
+}
+
+void remove_by_id(OrderArray *arr, int order_id) {
+  Order *order = order_by_id(arr, order_id);
+  if (order) {
+    size_t index = order - arr->data; // Calculate index from pointer
+    remove_by_index(arr, index);
+  }
 }

@@ -20,3 +20,4 @@ inline Order make_order(int order_id, OrderType order_type, int price,
 }
 
 void print_order(const Order *order);
+void print_order_full(const Order *order);

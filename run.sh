@@ -69,11 +69,12 @@ done
 # Define all known implementations
 typeset -A versions
 versions=(
-  py_brute       "PYTHONPATH=python/py_brute_force_lists python3 python/py_brute_force_lists/py_brute_force_lists.py"
-  py_sqlite      "PYTHONPATH=python/py_sqlite python3 python/py_sqlite/py_sqlite.py"
-  py_sorted_list "PYTHONPATH=python/py_sorted_list python3 python/py_sorted_list/py_sorted_list.py"
-  py_lazy        "PYTHONPATH=python/py_lazy_sort python3 python/py_lazy_sort/py_lazy_sort.py"
-  c_unsorted     "c/unsorted_lists/unsorted_lists"
+  py_brute           "PYTHONPATH=python/py_brute_force_lists python3 python/py_brute_force_lists/py_brute_force_lists.py"
+  py_sqlite          "PYTHONPATH=python/py_sqlite python3 python/py_sqlite/py_sqlite.py"
+  py_sorted_list     "PYTHONPATH=python/py_sorted_list python3 python/py_sorted_list/py_sorted_list.py"
+  py_lazy            "PYTHONPATH=python/py_lazy_sort python3 python/py_lazy_sort/py_lazy_sort.py"
+  c_unsorted         "c/unsorted_lists/unsorted_lists"
+  c_unsorted_id_hash "c/unsorted_id_hash/unsorted_id_hash"
 )
 
 # Handle --list
@@ -173,14 +174,14 @@ done
 # ⏱ Summary
 echo
 print -P "%F{cyan}⏱ Execution time summary:%f"
-print "+-----------------+-----------+"
-print "| Version         | Time (s)  |"
-print "+-----------------+-----------+"
+print "+---------------------------+-----------+"
+print "| Version                   | Time (s)  |"
+print "+---------------------------+-----------+"
 for name in ${(k)versions}; do
   should_run "$name" || continue
-  printf "| %-15s | %9s |\n" "$name" "$runtimes[$name]"
+  printf "| %-25s | %9s |\n" "$name" "$runtimes[$name]"
 done
-print "+-----------------+-----------+"
+print "+---------------------------+-----------+"
 
 # 📂 Final message
 if [[ $keep_files == true ]]; then
