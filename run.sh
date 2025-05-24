@@ -8,6 +8,7 @@ keep_files=false
 excluded=()
 included=()
 list_only=false
+compare=true
 baseline="py_brute"
 
 # Parse options
@@ -33,6 +34,10 @@ while [[ $# -gt 0 ]]; do
       baseline=$2
       shift 2
       ;;
+    --no-compare)
+      compare=false
+      shift
+      ;;
     --list)
       list_only=true
       shift
@@ -47,12 +52,13 @@ Options:
   --exclude A,B         Comma-separated list of implementations to exclude
   --include A,B         Comma-separated list of implementations to include
   --baseline NAME       Choose comparison baseline (default: py_brute)
+  --no-compare          Skip output comparison against baseline
   --list                Print available implementation names and exit
   --help                Show this help message and exit
 
 Examples:
   ./run.sh --include py_brute,py_sqlite --baseline py_sqlite
-  ./run.sh --exclude py_lazy --keep-files
+  ./run.sh --exclude py_lazy --keep-files --no-compare
 EOF
       exit 0
       ;;
@@ -144,7 +150,7 @@ for name in "${(@k)versions}"; do
     continue
   fi
 
-  printf "  🛠  Executing %-15s ... " "$name"
+  printf "  🛠  Executing %-25s ... " "$name"
   start=$(python3 -c 'import time; print(time.time())')
   eval "${versions[$name]} < \"$test_data\"" > "$tempdir/${name}_output.txt"
   end=$(python3 -c 'import time; print(time.time())')
@@ -154,22 +160,24 @@ for name in "${(@k)versions}"; do
 done
 
 # 🔍 Diff against baseline
-echo
-print -P "%F{cyan}🔍 Comparing the output of each version against $baseline...%f"
-for name in "${(@k)versions}"; do
-  [[ "$name" == "$baseline" ]] && continue
-  should_run "$name" || continue
+if [[ $compare == true ]]; then
+  echo
+  print -P "%F{cyan}🔍 Comparing the output of each version against $baseline...%f"
+  for name in "${(@k)versions}"; do
+    [[ "$name" == "$baseline" ]] && continue
+    should_run "$name" || continue
 
-  diff "$tempdir/${name}_output.txt" "$tempdir/${baseline}_output.txt" > "$tempdir/${name}_diff.txt"
-  if [[ $? -eq 0 ]]; then
-    print -P "%F{green}  ✅ $name output matches $baseline.%f"
-  else
-    print -P "%F{red}  ✘ $name output differs from $baseline!%f"
-    print -P "%F{red}↳ See diff: $tempdir/${name}_diff.txt%f"
-    echo "First few lines of diff:"
-    head -n 5 "$tempdir/${name}_diff.txt" | sed 's/^/    /'
-  fi
-done
+    diff "$tempdir/${name}_output.txt" "$tempdir/${baseline}_output.txt" > "$tempdir/${name}_diff.txt"
+    if [[ $? -eq 0 ]]; then
+      print -P "%F{green}  ✅ $name output matches $baseline.%f"
+    else
+      print -P "%F{red}  ✘ $name output differs from $baseline!%f"
+      print -P "%F{red}↳ See diff: $tempdir/${name}_diff.txt%f"
+      echo "First few lines of diff:"
+      head -n 5 "$tempdir/${name}_diff.txt" | sed 's/^/    /'
+    fi
+  done
+fi
 
 # ⏱ Summary
 echo
