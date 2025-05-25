@@ -1,0 +1,5 @@
+Checks: '-*,clang-analyzer-*,performance-*,modernize-*'
+WarningsAsErrors: ''
+CheckOptions:
+  - key:             security.insecureAPI.fprintf
+    value:           false

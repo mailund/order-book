@@ -1,5 +1,13 @@
 {
     "python.analysis.exclude": [
         ".venv"
-    ]
+    ],
+    "c-cpp-flylint.lizard.executable": "/Users/mailund/Code/order-book/.venv/bin/lizard",
+    "C_Cpp.codeAnalysis.clangTidy.enabled": true,
+    "C_Cpp.codeAnalysis.runAutomatically": true,
+    "C_Cpp.intelliSenseEngine": "default",
+    "C_Cpp.loggingLevel": "Debug",
+    "files.associations": {
+        "*.h": "c"
+    },
 }

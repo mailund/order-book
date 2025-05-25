@@ -111,3 +111,5 @@ Asks
 	Sell -203727 145187
 	Sell 57961 955277
 ```
+
+The programs should read events from stdin and produce query results to stdout. If run with option `-s` or `--silent`, the program should not produce any output for queries.

@@ -2,13 +2,22 @@
     "configurations": [
         {
             "name": "default",
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "intelliSenseMode": "clang-x64",
             "includePath": [
-                "${workspaceFolder}/c/**"
+                "${workspaceFolder}/c/lib"
+            ],
+            "compilerArgs": [
+                "-I${workspaceFolder}/c/lib",
+                "-Wall",
+                "-Wextra",
+                "-Wno-unused-parameter"
             ],
             "browse": {
                 "path": [
                     "${workspaceFolder}",
-                    "${workspaceFolder}/c"
+                    "${workspaceFolder}/c/lib"
                 ]
             }
         }

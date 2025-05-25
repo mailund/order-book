@@ -15,3 +15,10 @@ $(LIBDIR):
 # Build other subdirectories, ensuring lib is built first.
 $(OTHER_SUBDIRS): | $(LIBDIR)
 	$(MAKE) -C $@
+
+
+.PHONY: clean
+clean:
+	@for dir in $(SUBDIRS); do \
+	  $(MAKE) -C $$dir clean; \
+	done

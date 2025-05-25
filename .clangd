@@ -1,0 +1,9 @@
+CompileFlags:
+  Add: [
+    "-I./c/lib",
+    "-Wall",
+    "-Wextra",
+    "-Wno-unused-parameter"
+  ]
+Diagnostics:
+  UnusedIncludes: Strict
