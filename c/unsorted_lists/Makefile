@@ -1,17 +1,17 @@
 CC = cc
 AR = ar
-CFLAGS = -Wall -Wextra -O2 -I. -I.. 
+CFLAGS = -Wall -Wextra -O2 -I. -I../lib 
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
-BIN = unsorted_lists
+BIN = main
 
 .PHONY: all clean
 
 all: $(BIN)
 
 $(BIN): $(OBJ)
-	$(MAKE) -C .. liborderbook.a
-	$(CC) $(CFLAGS) -L.. -lorderbook $^ -o $@
+	$(MAKE) -C ../lib liborderbook.a
+	$(CC) $(CFLAGS) -L../lib -lorderbook $^ -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

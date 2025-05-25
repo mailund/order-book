@@ -79,9 +79,9 @@ versions=(
   py_sqlite          "PYTHONPATH=python/py_sqlite python3 python/py_sqlite/py_sqlite.py"
   py_sorted_list     "PYTHONPATH=python/py_sorted_list python3 python/py_sorted_list/py_sorted_list.py"
   py_lazy            "PYTHONPATH=python/py_lazy_sort python3 python/py_lazy_sort/py_lazy_sort.py"
-  c_unsorted         "c/unsorted_lists/unsorted_lists"
-  c_unsorted_id_hash "c/unsorted_id_hash/unsorted_id_hash"
-  c_radix_on_query   "c/radix_sorted_on_query/radix_sorted_on_query"
+  c_unsorted         "c/unsorted_lists/main"
+  c_unsorted_id_hash "c/unsorted_id_hash/main"
+  c_radix_on_query   "c/radix_sorted_on_query/main"
 )
 
 # Handle --list
@@ -139,6 +139,14 @@ fi
 # 🧪 Generate test data
 print -P "%F{cyan}🧪 Simulating data with N=$N...%f"
 python3 simulator/simulate.py -n "$N" -o "$test_data"
+
+# 🛠 Build the projects
+echo
+print -P "%F{cyan}🔨 Building project with make...%f"
+if ! make -s; then
+  print -P "%F{red}❌ Build failed!%f"
+  exit 1
+fi
 
 typeset -A runtimes
 
