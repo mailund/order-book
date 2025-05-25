@@ -89,25 +89,34 @@ static void handle_remove(OrderArray *buys, OrderArray *sells, OrderMap *map,
   order_map_remove(map, order_id);
 }
 
-static void handle_bids(OrderArray *buys, OrderMap *map) {
+static void handle_bids(OrderArray *buys, OrderMap *map, bool silent) {
   if (buys->size == 0)
     return;
   sort_orders_descending(buys, map);
+
+  if (silent)
+    return;
   printf("Bids\n");
   print_orders(buys);
 }
 
-static void handle_asks(OrderArray *sells, OrderMap *map) {
+static void handle_asks(OrderArray *sells, OrderMap *map, bool silent) {
   if (sells->size == 0)
     return;
   sort_orders_ascending(sells, map);
+
+  if (silent)
+    return;
   printf("Asks\n");
   print_orders(sells);
 }
 
 // Main Function
 
-int main(void) {
+int main(int argc, char *argv[]) {
+  bool silent = (argc > 1) && (strcmp(argv[1], "--silent") == 0 ||
+                               strcmp(argv[1], "-s") == 0);
+
   OrderArray buys, sells;
   init_order_array(&buys);
   init_order_array(&sells);
@@ -136,11 +145,11 @@ int main(void) {
       break;
 
     case EVENT_BIDS:
-      handle_bids(&buys, &map);
+      handle_bids(&buys, &map, silent);
       break;
 
     case EVENT_ASKS:
-      handle_asks(&sells, &map);
+      handle_asks(&sells, &map, silent);
       break;
     }
   }

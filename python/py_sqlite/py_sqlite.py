@@ -24,6 +24,12 @@ def main():
         default=None,
         help="Database file to use for the order book. Defaults to a temporary file.",
     )
+    parser.add_argument(
+        "-s",
+        "--silent",
+        action="store_true",
+        help="Suppress output for bids and asks.",
+    )
 
     args = parser.parse_args()
 
@@ -51,7 +57,7 @@ def main():
 
             case events.Bids():
                 bids = order_book.bids()
-                if not bids:
+                if not bids or args.silent:
                     continue
                 print(f"Bids")
                 for order in bids:
@@ -60,7 +66,7 @@ def main():
 
             case events.Asks():
                 asks = order_book.asks()
-                if not asks:
+                if not asks or args.silent:
                     continue
                 print(f"Asks")
                 for order in asks:

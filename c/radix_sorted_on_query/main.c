@@ -48,25 +48,34 @@ static void handle_remove(OrderArray *buys, OrderArray *sells, int order_id) {
   remove_by_id(sells, order_id);
 }
 
-static void handle_bids(OrderArray *buys) {
+static void handle_bids(OrderArray *buys, bool silent) {
   if (buys->size == 0)
     return;
   sort_bids(buys);
+
+  if (silent)
+    return;
   printf("Bids\n");
   print_orders(buys);
 }
 
-static void handle_asks(OrderArray *sells) {
+static void handle_asks(OrderArray *sells, bool silent) {
   if (sells->size == 0)
     return;
   sort_asks(sells);
+
+  if (silent)
+    return;
   printf("Asks\n");
   print_orders(sells);
 }
 
 // Main
 
-int main(void) {
+int main(int argc, char *argv[]) {
+  bool silent = (argc > 1) && (strcmp(argv[1], "--silent") == 0 ||
+                               strcmp(argv[1], "-s") == 0);
+
   OrderArray buys, sells;
   init_order_array(&buys);
   init_order_array(&sells);
@@ -89,10 +98,10 @@ int main(void) {
       handle_remove(&buys, &sells, event.data.remove.order_id);
       break;
     case EVENT_BIDS:
-      handle_bids(&buys);
+      handle_bids(&buys, silent);
       break;
     case EVENT_ASKS:
-      handle_asks(&sells);
+      handle_asks(&sells, silent);
       break;
     }
   }

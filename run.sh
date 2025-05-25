@@ -162,7 +162,7 @@ for name in "${(@k)versions}"; do
   printf "  🛠  Executing %-25s ... " "$name"
   start=$(python3 -c 'import time; print(time.time())')
   if [[ $compare == false ]]; then
-    eval "${versions[$name]} < \"$test_data\"" > /dev/null
+    eval "${versions[$name]} --silent < \"$test_data\"" > /dev/null
   else
     eval "${versions[$name]} < \"$test_data\"" > "$tempdir/${name}_output.txt"
   fi
