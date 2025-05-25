@@ -16,7 +16,7 @@ where
 type Id = Natural number ({1, 2, 3, ...})
 type Side = {Buy, Sell}
 type Quantity = Natural number
-type Price = Integers in the range (-1_000_000, 1_000_000)
+type Price = Integers in the range (-10_000, 10_000)
 ```
 
 An `OrderBook` contains a set of orders.

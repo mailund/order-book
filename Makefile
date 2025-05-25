@@ -5,20 +5,22 @@ OTHER_SUBDIRS := $(filter-out $(LIBDIR), $(SUBDIRS))
 
 .PHONY: all $(LIBDIR) $(OTHER_SUBDIRS)
 
-# Build the lib directory first, then the other subdirectories.
+# Build everything
 all: $(LIBDIR) $(OTHER_SUBDIRS)
 
-# Build the lib directory.
+# Build the lib directory with a printed message
 $(LIBDIR):
-	$(MAKE) -C $@
+	@echo "🔧 Building $(LIBDIR)..."
+	@$(MAKE) -C $@
 
-# Build other subdirectories, ensuring lib is built first.
+# Build all other subdirectories with messages, ensuring lib is first
 $(OTHER_SUBDIRS): | $(LIBDIR)
-	$(MAKE) -C $@
-
+	@echo "🔧 Building $@..."
+	@$(MAKE) -C $@
 
 .PHONY: clean
 clean:
 	@for dir in $(SUBDIRS); do \
+	  echo "🧹 Cleaning $$dir..."; \
 	  $(MAKE) -C $$dir clean; \
 	done

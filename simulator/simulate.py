@@ -71,7 +71,7 @@ def sample_quantity(state: SimulatorState) -> int:
 def sample_price(state: SimulatorState) -> float:
     """Sample a price for an order."""
     sign = random.choice([-1, 1])
-    price = random.randint(1, 1000000)
+    price = random.randint(1, 10000)
     return sign * price
 
 

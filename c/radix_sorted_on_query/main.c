@@ -18,17 +18,20 @@ static void print_orders(const OrderArray *orders) {
 }
 
 // Event Handlers
+static void create_order(OrderArray *orders, int order_id,
+                         const CreateOrder *co) {
+  Order order =
+      make_order(order_id, co->side == SIDE_BUY ? ORDER_BUY : ORDER_SELL,
+                 co->price, co->quantity);
+  append_order(orders, order);
+}
 
-static void handle_create(OrderArray *buys, OrderArray *sells, int *next_id,
-                          const CreateOrder *create) {
-  Order order = make_order((*next_id)++,
-                           create->side == SIDE_BUY ? ORDER_BUY : ORDER_SELL,
-                           create->price, create->quantity);
-
-  if (order.order_type == ORDER_BUY) {
-    append_order(buys, order);
+static void handle_create(OrderArray *buys, OrderArray *sells,
+                          const CreateOrder *co, int *order_id) {
+  if (co->side == SIDE_BUY) {
+    create_order(buys, (*order_id)++, co);
   } else {
-    append_order(sells, order);
+    create_order(sells, (*order_id)++, co);
   }
 }
 
@@ -82,6 +85,9 @@ int main(int argc, char *argv[]) {
 
   EventIterator iter;
   event_iterator_init(&iter, stdin);
+  FILE *fucking_stdin = fopen("/Users/mailund/Code/order-book/test.txt", "r");
+  assert(fucking_stdin != NULL && "Failed to open test.txt");
+  event_iterator_init(&iter, fucking_stdin);
 
   int order_id_counter = 0;
   Event event;
@@ -89,7 +95,7 @@ int main(int argc, char *argv[]) {
   while (event_iterator_next(&iter, &event)) {
     switch (event.type) {
     case EVENT_CREATE:
-      handle_create(&buys, &sells, &order_id_counter, &event.data.create);
+      handle_create(&buys, &sells, &event.data.create, &order_id_counter);
       break;
     case EVENT_UPDATE:
       handle_update(&buys, &sells, &event.data.update);
