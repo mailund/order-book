@@ -134,8 +134,9 @@ should_run() {
 # Prepare temp dir
 tempdir=$(mktemp -d)
 test_data="$tempdir/test_data.txt"
-if [[ $keep_files == false ]]; then
-  trap 'rm -rf "$tempdir"' EXIT
+cleanup_tempdir=true
+if [[ $keep_files == true ]]; then
+  cleanup_tempdir=false
 fi
 
 # 🧪 Generate test data
@@ -186,6 +187,7 @@ if [[ $compare == true ]]; then
     if [[ $? -eq 0 ]]; then
       print -P "%F{green}  ✅ $name output matches $baseline.%f"
     else
+      cleanup_tempdir=false
       print -P "%F{red}  ✘ $name output differs from $baseline!%f"
       print -P "%F{red}↳ See diff: $tempdir/${name}_diff.txt%f"
       echo "First few lines of diff:"
@@ -206,8 +208,10 @@ for name in ${(k)versions}; do
 done
 print "+---------------------------+-----------+"
 
-# 📂 Final message
-if [[ $keep_files == true ]]; then
+# 📂 Final message or cleanup
+if [[ $cleanup_tempdir == true ]]; then
+  rm -rf "$tempdir"
+else
   echo
   print -P "%F{yellow}📂 Temp files kept in: $tempdir%f"
 fi
