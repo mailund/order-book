@@ -1,7 +1,7 @@
 CC = cc
 AR = ar
-#CFLAGS = -Wall -Wextra -O2 -I. -I../lib
-CFLAGS = -Wall -Wextra -g -O0 -fno-omit-frame-pointer -I. -I../lib
+CFLAGS = -Wall -Wextra -O2 -I. -I../lib
+#CFLAGS = -Wall -Wextra -g -O0 -fno-omit-frame-pointer -I. -I../lib
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 BIN = main

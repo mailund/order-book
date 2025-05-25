@@ -1,7 +1,7 @@
 CC = cc
 AR = ar
-#CFLAGS = -Wall -Wextra -O2 -I.
-CFLAGS = -Wall -Wextra -g -O0 -fno-omit-frame-pointer -I.
+CFLAGS = -Wall -Wextra -O2 -I.
+#CFLAGS = -Wall -Wextra -g -O0 -fno-omit-frame-pointer -I.
 SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 LIB = liborderbook.a
