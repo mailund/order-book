@@ -99,13 +99,15 @@ if [[ -z "${versions[$baseline]}" ]]; then
   exit 1
 fi
 
-# If baseline is excluded, error out
-for ex in "${excluded[@]}"; do
-  [[ "$baseline" == "$ex" ]] && {
-    echo "❌ Error: Baseline '$baseline' is excluded. Remove it from --exclude." >&2
-    exit 1
-  }
-done
+# If we need to compare output and baseline is excluded, error out
+if [[ $compare == true ]]; then
+  for ex in "${excluded[@]}"; do
+    [[ "$baseline" == "$ex" ]] && {
+      echo "❌ Error: Baseline '$baseline' is excluded. Remove it from --exclude." >&2
+      exit 1
+    }
+  done
+fi
 
 # If --include used and baseline is not in it, add it
 if [[ ${#included[@]} -gt 0 ]]; then
