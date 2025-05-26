@@ -15,9 +15,13 @@ BIN = main
 
 .PHONY: all clean
 
-all: $(BIN)
+all: main bytes
 
-$(BIN): $(OBJ)
+main: main.o
+	$(MAKE) -C ../lib liborderbook.a
+	$(CC) $(CFLAGS) -L../lib -lorderbook $^ -o $@
+
+bytes: main_bytes.o
 	$(MAKE) -C ../lib liborderbook.a
 	$(CC) $(CFLAGS) -L../lib -lorderbook $^ -o $@
 
