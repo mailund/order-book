@@ -184,3 +184,4 @@ c/radix_sorted_on_query/main
 c/unsorted_id_hash/main
 c/unsorted_lists/main
 c/radix_sorted_on_query/bytes
+c/sorted_lists/main

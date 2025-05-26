@@ -80,6 +80,7 @@ versions=(
   py_sorted_list           "PYTHONPATH=python/py_sorted_list python3 python/py_sorted_list/py_sorted_list.py"
   py_lazy                  "PYTHONPATH=python/py_lazy_sort python3 python/py_lazy_sort/py_lazy_sort.py"
   c_unsorted               "c/unsorted_lists/main"
+  c_sorted                 "c/sorted_lists/main"
   c_unsorted_id_hash       "c/unsorted_id_hash/main"
   c_radix_on_query         "c/radix_sorted_on_query/main"
   c_radix_on_query_bytes   "c/radix_sorted_on_query/bytes"
