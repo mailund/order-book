@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "args.h"
 #include "events.h"
 #include "order.h"
 #include "order_list_with_map.h"
@@ -80,8 +81,11 @@ static void handle_asks(OrderArrayWithMap *sells, bool silent) {
 // Main Function
 
 int main(int argc, char *argv[]) {
-  bool silent = (argc > 1) && (strcmp(argv[1], "--silent") == 0 ||
-                               strcmp(argv[1], "-s") == 0);
+  Config cfg;
+  parse_args(&cfg, argc, argv);
+  if (cfg.input_file) {
+    freopen(cfg.input_file, "r", stdin);
+  }
 
   OrderArrayWithMap buys, sells;
   init_order_array_with_map(&buys);
@@ -108,11 +112,11 @@ int main(int argc, char *argv[]) {
       break;
 
     case EVENT_BIDS:
-      handle_bids(&buys, silent);
+      handle_bids(&buys, cfg.silent);
       break;
 
     case EVENT_ASKS:
-      handle_asks(&sells, silent);
+      handle_asks(&sells, cfg.silent);
       break;
     }
   }

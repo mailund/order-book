@@ -5,12 +5,17 @@
 
 #include "order_list_with_map.h"
 
+// Keep capacity and load factors powers of two for the hash function!
 #define INITIAL_CAPACITY 4
-#define LOAD_FACTOR 2
+#define LOAD_FACTOR 8
 
 // ---------- Internal Utilities ----------
 
-static size_t hash(int key, size_t cap) { return (unsigned int)key % cap; }
+static size_t hash(int key, size_t cap) {
+  uint32_t x = (uint32_t)key;
+  x *= 2654435761u;     // Knuth's multiplicative constant
+  return x & (cap - 1); // cap is a power of two so this is a fast mod
+}
 
 static OrderIndexEntry *map_lookup(OrderArrayWithMap *arr, int key) {
   size_t h = hash(key, arr->map_capacity);
@@ -28,7 +33,7 @@ static OrderIndexEntry *map_probe_insert(OrderArrayWithMap *arr, int key) {
   size_t h = hash(key, arr->map_capacity);
   OrderIndexEntry *tombstone = NULL;
   for (size_t i = 0; i < arr->map_capacity; ++i) {
-    size_t idx = (h + i) % arr->map_capacity;
+    size_t idx = (h + i) & (arr->map_capacity - 1);
     if (arr->map[idx].status == MAP_OCCUPIED && arr->map[idx].key == key)
       return &arr->map[idx];
     if (arr->map[idx].status == MAP_TOMBSTONE && !tombstone)

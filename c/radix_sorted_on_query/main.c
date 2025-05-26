@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "args.h"
 #include "events.h"
 #include "order.h"
 #include "order_array.h"
@@ -76,8 +77,11 @@ static void handle_asks(OrderArray *sells, bool silent) {
 // Main
 
 int main(int argc, char *argv[]) {
-  bool silent = (argc > 1) && (strcmp(argv[1], "--silent") == 0 ||
-                               strcmp(argv[1], "-s") == 0);
+  Config cfg;
+  parse_args(&cfg, argc, argv);
+  if (cfg.input_file) {
+    freopen(cfg.input_file, "r", stdin);
+  }
 
   OrderArray buys, sells;
   init_order_array(&buys);
@@ -85,9 +89,6 @@ int main(int argc, char *argv[]) {
 
   EventIterator iter;
   event_iterator_init(&iter, stdin);
-  FILE *fucking_stdin = fopen("/Users/mailund/Code/order-book/test.txt", "r");
-  assert(fucking_stdin != NULL && "Failed to open test.txt");
-  event_iterator_init(&iter, fucking_stdin);
 
   int order_id_counter = 0;
   Event event;
@@ -104,10 +105,10 @@ int main(int argc, char *argv[]) {
       handle_remove(&buys, &sells, event.data.remove.order_id);
       break;
     case EVENT_BIDS:
-      handle_bids(&buys, silent);
+      handle_bids(&buys, cfg.silent);
       break;
     case EVENT_ASKS:
-      handle_asks(&sells, silent);
+      handle_asks(&sells, cfg.silent);
       break;
     }
   }

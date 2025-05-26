@@ -1,4 +1,6 @@
-# Define the lib directory and find all subdirectories in "c"
+BUILD ?= release
+export BUILD
+
 LIBDIR := c/lib
 SUBDIRS := $(shell find c -mindepth 1 -maxdepth 1 -type d)
 OTHER_SUBDIRS := $(filter-out $(LIBDIR), $(SUBDIRS))
