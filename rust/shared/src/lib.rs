@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::io::BufRead;
 use std::panic;
 
@@ -72,4 +73,34 @@ pub fn parse_events<T: BufRead>(reader: T) -> impl Iterator<Item = Event> {
             _ => panic!("Invalid command: {:?}", tokens),
         }
     })
+}
+
+/// A comparator trait for Orders.  Must be `Default` so we can do `C::default()`.
+pub trait OrderComparator: Default {
+    fn cmp(&self, a: &Order, b: &Order) -> Ordering;
+}
+
+/// A ZST comparator for descending (buy) order: primary by price desc, secondary by quantity desc.
+#[derive(Clone, Copy, Default)]
+pub struct BuyCmp;
+
+impl OrderComparator for BuyCmp {
+    fn cmp(&self, a: &Order, b: &Order) -> Ordering {
+        // we want highest price first, then highest quantity
+        b.price
+            .cmp(&a.price)
+            .then_with(|| b.quantity.cmp(&a.quantity))
+    }
+}
+
+/// A ZST comparator for ascending (sell) order: price asc, then quantity asc.
+#[derive(Clone, Copy, Default)]
+pub struct SellCmp;
+
+impl OrderComparator for SellCmp {
+    fn cmp(&self, a: &Order, b: &Order) -> Ordering {
+        a.price
+            .cmp(&b.price)
+            .then_with(|| a.quantity.cmp(&b.quantity))
+    }
 }

@@ -2,5 +2,6 @@
 members = [
     "shared",
     "sorted",
+    "blocks",
 ]
 resolver = "2"

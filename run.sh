@@ -3,7 +3,7 @@
 autoload -Uz colors && colors
 
 # Default settings
-N=1000
+N=10000
 keep_files=false
 excluded=()
 included=()
@@ -85,6 +85,7 @@ versions=(
   c_radix_on_query         "c/radix_sorted_on_query/main"
   c_radix_on_query_bytes   "c/radix_sorted_on_query/bytes"
   rust_sorted              "rust/target/release/sorted"
+  rust_blocks              "rust/target/release/blocks"
 )
 
 # Handle --list
