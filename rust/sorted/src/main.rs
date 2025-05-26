@@ -24,11 +24,9 @@ impl<C: OrderComparator + Default> SortedOrders<C> {
     pub fn insert(&mut self, order: Order) {
         let mut i = self.orders.len();
         self.orders.push(order);
-        // bubble up
-        let cmp = C::default();
         while i > 0 {
             let prev = i - 1;
-            if cmp.cmp(&self.orders[i], &self.orders[prev]) == Ordering::Less {
+            if C::cmp(&self.orders[i], &self.orders[prev]) == Ordering::Less {
                 self.orders.swap(i, prev);
                 i = prev;
             } else {
@@ -66,11 +64,10 @@ impl<C: OrderComparator + Default> SortedOrders<C> {
 
     /// Re‐bubble the element at `idx` up or down.
     fn reorder(&mut self, mut idx: usize) {
-        let cmp = C::default();
         // bubble up
         while idx > 0 {
             let prev = idx - 1;
-            if cmp.cmp(&self.orders[idx], &self.orders[prev]) == Ordering::Less {
+            if C::cmp(&self.orders[idx], &self.orders[prev]) == Ordering::Less {
                 self.orders.swap(idx, prev);
                 idx = prev;
             } else {
@@ -81,7 +78,7 @@ impl<C: OrderComparator + Default> SortedOrders<C> {
         let len = self.orders.len();
         while idx + 1 < len {
             let next = idx + 1;
-            if cmp.cmp(&self.orders[idx], &self.orders[next]) == Ordering::Greater {
+            if C::cmp(&self.orders[idx], &self.orders[next]) == Ordering::Greater {
                 self.orders.swap(idx, next);
                 idx = next;
             } else {
