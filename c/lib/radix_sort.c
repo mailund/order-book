@@ -33,16 +33,19 @@ static void reverse_range(Order **data, size_t size) {
 
 // ---------- Counting Sort (always ascending) ----------
 
-static void counting_sort(Order *const *src, Order **dst, size_t size,
-                          uint32_t (*get_bucket)(Order *, int), int radix) {
+static inline void counting_sort(Order *const *src, Order **dst, size_t size,
+                                 uint32_t (*get_bucket)(Order *, int),
+                                 int radix) {
   size_t count[MAX_BUCKETS] = {0};
 
+  size_t max_bucket_seen = 0;
   for (size_t i = 0; i < size; i++) {
     uint32_t b = get_bucket(src[i], radix);
     count[b]++;
+    max_bucket_seen = b > max_bucket_seen ? b : max_bucket_seen;
   }
 
-  for (int i = 1; i < MAX_BUCKETS; i++)
+  for (size_t i = 1; i <= max_bucket_seen; i++)
     count[i] += count[i - 1];
 
   for (ssize_t i = size - 1; i >= 0; i--) {
