@@ -1,5 +1,4 @@
 use std::env;
-use std::fs::File;
 use std::io::{self, BufRead};
 
 use shared::parse_events;
@@ -102,13 +101,7 @@ impl SortedOrders {
 fn main() {
     let args: Vec<String> = env::args().collect();
     let silent = args.contains(&"--silent".to_string());
-    let input: Box<dyn BufRead> = if args.len() > 1 && args[1] != "--silent" {
-        Box::new(io::BufReader::new(
-            File::open(&args[1]).expect("Failed to open input file"),
-        ))
-    } else {
-        Box::new(io::BufReader::new(io::stdin()))
-    };
+    let input: Box<dyn BufRead> = Box::new(io::BufReader::new(io::stdin()));
 
     let mut buys = SortedOrders::new(true);
     let mut sells = SortedOrders::new(false);
