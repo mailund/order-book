@@ -1,0 +1,75 @@
+use std::io::BufRead;
+use std::panic;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OrderType {
+    Buy,
+    Sell,
+}
+
+#[derive(Debug, Clone)]
+pub struct Order {
+    pub order_id: i32,
+    pub order_type: OrderType,
+    pub price: i32,
+    pub quantity: i32,
+}
+
+impl Order {
+    pub fn new(order_id: i32, order_type: OrderType, price: i32, quantity: i32) -> Self {
+        Self {
+            order_id,
+            order_type,
+            price,
+            quantity,
+        }
+    }
+}
+
+pub enum Event {
+    Create {
+        order_type: OrderType,
+        price: i32,
+        quantity: i32,
+    },
+    Update {
+        id: i32,
+        new_price: i32,
+    },
+    Remove {
+        id: i32,
+    },
+    Bids,
+    Asks,
+}
+
+pub fn parse_events<T: BufRead>(reader: T) -> impl Iterator<Item = Event> {
+    reader.lines().map(|line| {
+        let line = line.expect("Failed to read line");
+        let tokens: Vec<&str> = line.trim().split_whitespace().collect();
+        match tokens.as_slice() {
+            ["CREATE", side, quantity, price] => {
+                let order_type = if *side == "Buy" {
+                    OrderType::Buy
+                } else {
+                    OrderType::Sell
+                };
+                Event::Create {
+                    order_type,
+                    price: price.parse().expect("Invalid price"),
+                    quantity: quantity.parse().expect("Invalid quantity"),
+                }
+            }
+            ["UPDATE", id, new_price] => Event::Update {
+                id: id.parse().expect("Invalid id"),
+                new_price: new_price.parse().expect("Invalid price"),
+            },
+            ["REMOVE", id] => Event::Remove {
+                id: id.parse().expect("Invalid id"),
+            },
+            ["BIDS"] => Event::Bids,
+            ["ASKS"] => Event::Asks,
+            _ => panic!("Invalid command: {:?}", tokens),
+        }
+    })
+}

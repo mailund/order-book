@@ -84,6 +84,7 @@ versions=(
   c_unsorted_id_hash       "c/unsorted_id_hash/main"
   c_radix_on_query         "c/radix_sorted_on_query/main"
   c_radix_on_query_bytes   "c/radix_sorted_on_query/bytes"
+  rust_sorted              "rust/target/release/sorted"
 )
 
 # Handle --list

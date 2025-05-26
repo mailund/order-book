@@ -2,7 +2,7 @@ BUILD ?= release
 export BUILD
 
 LIBDIR := c/lib
-SUBDIRS := $(shell find c -mindepth 1 -maxdepth 1 -type d)
+SUBDIRS := $(shell find c -mindepth 1 -maxdepth 1 -type d) rust
 OTHER_SUBDIRS := $(filter-out $(LIBDIR), $(SUBDIRS))
 
 .PHONY: all $(LIBDIR) $(OTHER_SUBDIRS)
