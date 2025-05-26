@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,33 +7,28 @@
 #include "events.h"
 #include "order.h"
 #include "order_list_with_map.h"
+#include "order_pool.h"
 
-#include <assert.h>
-#include <stdio.h>
-
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-// Print Functions
+// ---------- Print Functions ----------
 
 static void print_orders(const OrderArrayWithMap *orders) {
   for (size_t i = 0; i < orders->size; i++) {
     printf("\t");
-    print_order(&orders->data[i]);
+    print_order(orders->data[i]);
   }
   printf("\n");
 }
 
-// Event Handlers
+// ---------- Event Handlers ----------
 
 static void handle_create(OrderArrayWithMap *buys, OrderArrayWithMap *sells,
-                          const CreateOrder *co, int *order_id_counter) {
-  Order order = make_order((*order_id_counter)++,
-                           co->side == SIDE_BUY ? ORDER_BUY : ORDER_SELL,
-                           co->price, co->quantity);
+                          const CreateOrder *co, int *order_id_counter,
+                          OrderPool *pool) {
+  Order *order = allocate_order(pool, (*order_id_counter)++,
+                                co->side == SIDE_BUY ? ORDER_BUY : ORDER_SELL,
+                                co->price, co->quantity);
 
-  if (order.order_type == ORDER_BUY) {
+  if (order->order_type == ORDER_BUY) {
     append_order_with_map(buys, order);
   } else {
     append_order_with_map(sells, order);
@@ -78,7 +74,7 @@ static void handle_asks(OrderArrayWithMap *sells, bool silent) {
   print_orders(sells);
 }
 
-// Main Function
+// ---------- Main ----------
 
 int main(int argc, char *argv[]) {
   Config cfg;
@@ -91,6 +87,9 @@ int main(int argc, char *argv[]) {
   init_order_array_with_map(&buys);
   init_order_array_with_map(&sells);
 
+  OrderPool pool;
+  init_order_pool(&pool, 1024); // Preallocate blocks of 1024 orders
+
   EventIterator iter;
   event_iterator_init(&iter, stdin);
 
@@ -100,7 +99,8 @@ int main(int argc, char *argv[]) {
   while (event_iterator_next(&iter, &event)) {
     switch (event.type) {
     case EVENT_CREATE:
-      handle_create(&buys, &sells, &event.data.create, &order_id_counter);
+      handle_create(&buys, &sells, &event.data.create, &order_id_counter,
+                    &pool);
       break;
 
     case EVENT_UPDATE:
@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
   event_iterator_close(&iter);
   free_order_array_with_map(&buys);
   free_order_array_with_map(&sells);
+  free_order_pool(&pool);
 
   return 0;
 }

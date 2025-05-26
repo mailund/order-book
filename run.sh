@@ -165,9 +165,15 @@ for name in "${(@k)versions}"; do
   printf "  🛠  Executing %-25s ... " "$name"
   start=$(python3 -c 'import time; print(time.time())')
   if [[ $compare == false ]]; then
-    eval "${versions[$name]} --silent < \"$test_data\"" > /dev/null
+    if ! eval "${versions[$name]} --silent < \"$test_data\"" > /dev/null 2>&1; then
+      echo "❌ Error: Command for $name failed." >&2
+      continue
+    fi
   else
-    eval "${versions[$name]} < \"$test_data\"" > "$tempdir/${name}_output.txt"
+    if ! eval "${versions[$name]} < \"$test_data\"" > "$tempdir/${name}_output.txt" 2>&1; then
+      echo "❌ Error: Command for $name failed." >&2
+      continue
+    fi
   fi
   end=$(python3 -c 'import time; print(time.time())')
   duration=$(printf "%.2f" "$(echo "$end - $start" | bc)")

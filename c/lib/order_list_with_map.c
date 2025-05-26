@@ -5,7 +5,6 @@
 
 #include "order_list_with_map.h"
 
-// Keep capacity and load factors powers of two for the hash function!
 #define INITIAL_CAPACITY 4
 #define LOAD_FACTOR 8
 
@@ -20,7 +19,7 @@ static size_t hash(int key, size_t cap) {
 static OrderIndexEntry *map_lookup(OrderArrayWithMap *arr, int key) {
   size_t h = hash(key, arr->map_capacity);
   for (size_t i = 0; i < arr->map_capacity; ++i) {
-    size_t idx = (h + i) % arr->map_capacity;
+    size_t idx = (h + i) & (arr->map_capacity - 1);
     if (arr->map[idx].status == MAP_EMPTY)
       return NULL;
     if (arr->map[idx].status == MAP_OCCUPIED && arr->map[idx].key == key)
@@ -44,25 +43,18 @@ static OrderIndexEntry *map_probe_insert(OrderArrayWithMap *arr, int key) {
   return NULL;
 }
 
-static void map_insert(OrderArrayWithMap *arr, int key, size_t index) {
+static void map_insert(OrderArrayWithMap *arr, int key, Order *order) {
   OrderIndexEntry *entry = map_probe_insert(arr, key);
   assert(entry && "Map insert failed");
   entry->key = key;
-  entry->index = index;
+  entry->order_ptr = order;
   entry->status = MAP_OCCUPIED;
 }
 
-static void map_update(OrderArrayWithMap *arr, int key, size_t new_index) {
+static void map_remove(OrderArrayWithMap *arr, int key) {
   OrderIndexEntry *entry = map_lookup(arr, key);
-  assert(entry && "Key not found in map for update");
-  entry->index = new_index;
-}
-
-static void rehash(OrderArrayWithMap *arr) {
-  memset(arr->map, 0, arr->map_capacity * sizeof(OrderIndexEntry));
-  for (size_t i = 0; i < arr->size; ++i) {
-    map_insert(arr, arr->data[i].order_id, i);
-  }
+  if (entry)
+    entry->status = MAP_TOMBSTONE;
 }
 
 // ---------- Initialization and Cleanup ----------
@@ -70,7 +62,7 @@ static void rehash(OrderArrayWithMap *arr) {
 void init_order_array_with_map(OrderArrayWithMap *arr) {
   arr->size = 0;
   arr->capacity = INITIAL_CAPACITY;
-  arr->data = malloc(arr->capacity * sizeof(Order));
+  arr->data = malloc(arr->capacity * sizeof *arr->data);
   if (!arr->data) {
     perror("malloc data");
     exit(1);
@@ -96,7 +88,7 @@ void free_order_array_with_map(OrderArrayWithMap *arr) {
 
 static void resize_order_array_with_map(OrderArrayWithMap *arr) {
   arr->capacity *= 2;
-  arr->data = realloc(arr->data, arr->capacity * sizeof(Order));
+  arr->data = realloc(arr->data, arr->capacity * sizeof(Order *));
   if (!arr->data) {
     perror("realloc data");
     exit(1);
@@ -110,23 +102,24 @@ static void resize_order_array_with_map(OrderArrayWithMap *arr) {
   }
 
   memset(arr->map, 0, arr->map_capacity * sizeof(OrderIndexEntry));
-  rehash(arr);
+  for (size_t i = 0; i < arr->size; ++i) {
+    map_insert(arr, arr->data[i]->order_id, arr->data[i]);
+  }
 }
 
 // ---------- Core Operations ----------
 
-void append_order_with_map(OrderArrayWithMap *arr, Order order) {
+void append_order_with_map(OrderArrayWithMap *arr, Order *order) {
   if (arr->size == arr->capacity) {
     resize_order_array_with_map(arr);
   }
-  arr->data[arr->size] = order;
-  map_insert(arr, order.order_id, arr->size);
-  arr->size++;
+  arr->data[arr->size++] = order;
+  map_insert(arr, order->order_id, order);
 }
 
 Order *find_order_by_id(OrderArrayWithMap *arr, int order_id) {
   OrderIndexEntry *entry = map_lookup(arr, order_id);
-  return entry ? &arr->data[entry->index] : NULL;
+  return entry ? entry->order_ptr : NULL;
 }
 
 void remove_order_by_id(OrderArrayWithMap *arr, int order_id) {
@@ -134,41 +127,40 @@ void remove_order_by_id(OrderArrayWithMap *arr, int order_id) {
   if (!entry)
     return;
 
-  size_t remove_idx = entry->index;
-  size_t last_idx = arr->size - 1;
+  Order *to_remove = entry->order_ptr;
+  map_remove(arr, order_id);
 
-  entry->status = MAP_TOMBSTONE;
-
-  if (remove_idx != last_idx) {
-    arr->data[remove_idx] = arr->data[last_idx];
-    map_update(arr, arr->data[remove_idx].order_id, remove_idx);
+  for (size_t i = 0; i < arr->size; ++i) {
+    if (arr->data[i] == to_remove) {
+      arr->data[i] = arr->data[arr->size - 1];
+      arr->size--;
+      return;
+    }
   }
-
-  arr->size--;
 }
 
 // ---------- Sorting ----------
 
 static int cmp_asc(const void *a, const void *b) {
-  const Order *o1 = a, *o2 = b;
+  const Order *o1 = *(const Order **)a;
+  const Order *o2 = *(const Order **)b;
   if (o1->price != o2->price)
     return o1->price - o2->price;
   return o1->quantity - o2->quantity;
 }
 
 static int cmp_desc(const void *a, const void *b) {
-  const Order *o1 = a, *o2 = b;
+  const Order *o1 = *(const Order **)a;
+  const Order *o2 = *(const Order **)b;
   if (o1->price != o2->price)
     return o2->price - o1->price;
   return o2->quantity - o1->quantity;
 }
 
 void sort_orders_asc(OrderArrayWithMap *arr) {
-  qsort(arr->data, arr->size, sizeof(Order), cmp_asc);
-  rehash(arr);
+  qsort(arr->data, arr->size, sizeof(Order *), cmp_asc);
 }
 
 void sort_orders_desc(OrderArrayWithMap *arr) {
-  qsort(arr->data, arr->size, sizeof(Order), cmp_desc);
-  rehash(arr);
+  qsort(arr->data, arr->size, sizeof(Order *), cmp_desc);
 }
