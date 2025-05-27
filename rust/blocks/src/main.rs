@@ -17,7 +17,7 @@ impl<C: OrderComparator> SortedOrders<C> {
     pub fn new() -> Self {
         SortedOrders {
             chunks: Vec::new(),
-            max_chunk_size: 2, // adjust as you like
+            max_chunk_size: 1024, // FIXME: Adapt this
             _cmp: PhantomData,
         }
     }
