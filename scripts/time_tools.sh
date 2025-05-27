@@ -23,9 +23,9 @@ load_script "$script_dir/display.sh"
 
 # which tools to run in each bucket
 small=( ${(k)tools:#py_sqlite} )
-medium=( c_sorted c_unsorted_id_hash c_radix_on_query c_radix_on_query_bytes py_sorted_list rust_sorted rust_blocks )
-large=( c_sorted py_sorted_list rust_sorted rust_blocks )
-huge=( c_sorted rust_sorted rust_blocks )
+medium=( c_sorted c_unsorted_id_hash c_radix_on_query c_radix_on_query_bytes py_sorted_list rust_sorted rust_blocks rust_block_and_table )
+large=( c_sorted py_sorted_list rust_sorted rust_blocks rust_block_and_table )
+huge=( c_sorted rust_sorted rust_blocks rust_block_and_table )
 
 # by default we run only small & medium
 run_small=true
@@ -314,7 +314,7 @@ if [[ $run_large == true ]]; then
       t0=$(python3 - <<<'import time;print(time.time())')
       eval "${tools[$t]} --silent < \"$test_data\"" &>/dev/null
       t1=$(python3 - <<<'import time;print(time.time())')
-      dt=$(printf "%.2F" "$(echo "$t1 - $t0" | bc)")
+      dt=$(printf "%.2f" "$(echo "$t1 - $t0" | bc)")
       [[ $verbose == true ]] && printf "%6.2f s\n" "$dt"
       echo "$t,$N,$dt" >>| "$large_csv"
     done

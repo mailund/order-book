@@ -1,0 +1,5 @@
+tool,N,duration
+c_sorted,2000000,49.66
+rust_sorted,2000000,47.43
+rust_blocks,2000000,24.20
+c_sorted,4000000,791.90
