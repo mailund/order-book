@@ -4,5 +4,7 @@ members = [
     "sorted",
     "blocks",
     "blocks_and_table",
+    "btree",
+    "blocks_and_btree",
 ]
 resolver = "2"

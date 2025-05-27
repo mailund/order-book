@@ -18,4 +18,5 @@ tools=(
   rust_sorted              "rust/target/release/sorted"
   rust_blocks              "rust/target/release/blocks"
   rust_blocks_and_table    "rust/target/release/blocks_and_table"
+  rust_btree               "rust/target/release/btree"
 )

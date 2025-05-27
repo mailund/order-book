@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::io::BufRead;
+use std::marker::PhantomData;
 use std::panic;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,5 +115,35 @@ impl OrderComparator for SellCmp {
             .cmp(&b.price)
             .then_with(|| a.quantity.cmp(&b.quantity))
             .then_with(|| a.order_id.cmp(&b.order_id))
+    }
+}
+
+/// A tiny newtype around `Order` that implements `Ord` via `C::cmp`.
+#[derive(Clone)]
+pub struct CmpOrder<C: OrderComparator>(pub Order, pub PhantomData<C>);
+
+impl<C: OrderComparator> PartialEq for CmpOrder<C> {
+    fn eq(&self, other: &Self) -> bool {
+        // we also tie‐break on order_id to ensure a total order
+        self.0.order_id == other.0.order_id
+    }
+}
+impl<C: OrderComparator> Eq for CmpOrder<C> {}
+
+impl<C: OrderComparator> PartialOrd for CmpOrder<C> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl<C: OrderComparator> Ord for CmpOrder<C> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // first use the user‐provided comparator...
+        let primary = C::cmp(&self.0, &other.0);
+        if primary != Ordering::Equal {
+            primary
+        } else {
+            // then tie‐break by id so we never treat two distinct orders as equal
+            self.0.order_id.cmp(&other.0.order_id)
+        }
     }
 }

@@ -138,10 +138,6 @@ if [[ $keep_files == true ]]; then
   cleanup_tempdir=false
 fi
 
-# 🧪 Generate test data
-print -P "%F{cyan}🧪 Simulating data with N=$N...%f"
-python3 simulator/simulate.py -n "$N" -o "$test_data"
-
 # 🛠 Build the projects
 echo
 print -P "%F{cyan}🔨 Building project with make...%f"
@@ -149,6 +145,19 @@ if ! make -s; then
   print -P "%F{red}❌ Build failed!%f"
   exit 1
 fi
+
+echo
+print -P "%F{cyan}🔄 Cold-start warm-up…%f"
+for n in ${(k)tools}; do
+  printf "  Warming %-30s … " "$n"
+  eval "${tools[$n]}" < /dev/null &>/dev/null
+  print -P "%F{green}done%f"
+done
+echo
+
+# 🧪 Generate test data
+print -P "%F{cyan}🧪 Simulating data with N=$N...%f"
+python3 simulator/simulate.py -n "$N" -o "$test_data"
 
 typeset -A runtimes
 
