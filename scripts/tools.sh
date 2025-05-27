@@ -1,7 +1,10 @@
 #!/bin/zsh
 
 # Define all known implementations
-typeset -A tools
+# NB! -g makes it global so you can source the file in a function;
+# if you remove it, sourcing from functions will make it a local variable,
+# so be careful with that.
+typeset -g -A tools
 tools=(
   py_brute                 "PYTHONPATH=python/py_brute_force_lists python3 python/py_brute_force_lists/py_brute_force_lists.py"
   py_sqlite                "PYTHONPATH=python/py_sqlite python3 python/py_sqlite/py_sqlite.py"
