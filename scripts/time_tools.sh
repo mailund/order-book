@@ -54,7 +54,7 @@ list_only=false
 small_csv="small.csv";   small_start=1000;    small_end=10000;    small_step=500
 medium_csv="medium.csv"; medium_start=20000;  medium_end=200000;  medium_step=10000
 large_csv="large.csv";   large_start=500000;  large_end=1000000;  large_step=100000
-huge_csv="huge.csv";     huge_start=2000000;  huge_end=10000000;   huge_step=2000000
+huge_csv="huge.csv";     huge_start=2000000;  huge_end=10000000;  huge_step=1000000
 
 
 # ────────────────────────────────────────────────────
@@ -334,7 +334,7 @@ echo
 # temp data scratch
 tempdir=$(mktemp -d)
 test_data="$tempdir/test_data.txt"
-# trap 'echo NUKING ; rm -rf "$tempdir"' EXIT
+trap 'rm -rf "$tempdir"' EXIT
 
 # defaults for plotting
 (( ! plot_small_explicit ))  && plot_small=$run_small
@@ -356,5 +356,4 @@ test_data="$tempdir/test_data.txt"
 [ $run_huge  = true ] && measure_huge
 [ $plot_huge = true ] && plot_huge
 
-rm -rf "$tempdir"
 print -P "%F{green}✅ All done!%f"
