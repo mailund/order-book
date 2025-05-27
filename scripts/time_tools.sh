@@ -25,7 +25,7 @@ load_script "$script_dir/display.sh"
 # which tools to run in each bucket
 small=( ${(k)tools:#py_sqlite} )
 medium=( c_sorted c_unsorted_id_hash c_radix_on_query c_radix_on_query_bytes py_sorted_list rust_sorted rust_blocks )
-large=( c_sorted rust_sorted rust_blocks )
+large=( c_sorted py_sorted_list rust_sorted rust_blocks )
 
 # by default we run only small & medium
 run_small=true
