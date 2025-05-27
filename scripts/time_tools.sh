@@ -227,7 +227,7 @@ fi
 # ────────────────────────────────────────────────────
 if [[ $plot_small == true ]]; then
   if [[ -s "$small_csv" ]]; then
-    Rscript - <<'EOF'
+    Rscript - <<EOF
 library(ggplot2)
 d <- read.csv("$small_csv", stringsAsFactors=FALSE)
 p <- ggplot(d, aes(x=N, y=duration, color=tool)) +
@@ -292,7 +292,7 @@ fi
 # ────────────────────────────────────────────────────
 if [[ $plot_medium == true ]]; then
   if [[ -s "$medium_csv" ]]; then
-    Rscript - <<'EOF'
+    Rscript - <<EOF
 library(ggplot2)
 d <- read.csv("$medium_csv", stringsAsFactors=FALSE)
 p <- ggplot(d, aes(x=N, y=duration, color=tool)) +
@@ -357,7 +357,7 @@ fi
 # ────────────────────────────────────────────────────
 if [[ $plot_large == true ]]; then
   if [[ -s "$large_csv" ]]; then
-    Rscript - <<'EOF'
+    Rscript - <<EOF
 library(ggplot2)
 d <- read.csv("$large_csv", stringsAsFactors=FALSE)
 p <- ggplot(d, aes(x=N, y=duration, color=tool)) +
