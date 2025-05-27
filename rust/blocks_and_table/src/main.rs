@@ -1,51 +1,50 @@
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::env;
 use std::io::{self, BufRead};
 use std::marker::PhantomData;
 
 use shared::{parse_events, BuyCmp, Event, Order, OrderComparator, OrderType, SellCmp};
 
-/// Chunked, sorted order book.
+/// Chunked, sorted order book with embedded id→Order map.
 pub struct SortedOrders<C: OrderComparator> {
+    /// Each chunk is individually sorted.
     chunks: Vec<Vec<Order>>,
+    /// Map from order_id → Order, for O(1) lookup.
+    map: HashMap<i32, Order>,
+    /// Maximum number of orders per chunk before splitting.
     max_chunk_size: usize,
     _cmp: PhantomData<C>,
 }
 
 impl<C: OrderComparator> SortedOrders<C> {
-    /// Start with no chunks; the first insert will create one.
-    pub fn new() -> Self {
+    /// Create an empty book.
+    pub fn new(max_chunk_size: usize) -> Self {
         SortedOrders {
             chunks: Vec::new(),
-            max_chunk_size: 1024, // FIXME: Adapt this
+            map: HashMap::new(),
+            max_chunk_size,
             _cmp: PhantomData,
         }
     }
 
-    /// Find the chunk index where `order` belongs (first chunk whose last > order),
-    /// or `chunks.len()` if it belongs at the end.
+    #[cfg(debug_assertions)]
+    pub fn debug_print_chunks(&self) {
+        for (i, chunk) in self.chunks.iter().enumerate() {
+            println!("Chunk {}:", i);
+            for order in chunk {
+                println!("\t{:?}", order);
+            }
+        }
+    }
+
+    /// Locate which chunk an order should go into.
     fn find_chunk(&self, order: &Order) -> usize {
         self.chunks
             .partition_point(|chunk| C::cmp(chunk.last().unwrap(), order) == Ordering::Less)
     }
 
-    /// Find and remove an order by ID from whichever chunk it’s in,
-    /// returning it.  Returns `None` if not found.
-    fn take_by_id(&mut self, order_id: i32) -> Option<Order> {
-        for i in 0..self.chunks.len() {
-            if let Some(pos) = self.chunks[i].iter().position(|o| o.order_id == order_id) {
-                let order = self.chunks[i].remove(pos);
-                if self.chunks[i].is_empty() {
-                    self.chunks.remove(i);
-                }
-                return Some(order);
-            }
-        }
-        None
-    }
-
-    /// Insert `order` into chunk `idx`, keeping that chunk sorted,
-    /// splitting it if it grows too large.
+    /// Insert into a single chunk, keeping it sorted and splitting if too large.
     fn insert_in_chunk(&mut self, idx: usize, order: Order) {
         if idx == self.chunks.len() {
             // The order is the largest we have see so far, put it in a new chunk
@@ -68,27 +67,42 @@ impl<C: OrderComparator> SortedOrders<C> {
         }
     }
 
-    /// Public insert.
-    pub fn insert(&mut self, order: Order) {
-        let idx = self.find_chunk(&order);
-        self.insert_in_chunk(idx, order);
-    }
-
-    /// Public update: remove, adjust, re-insert.
-    pub fn update(&mut self, order_id: i32, new_price: i32) {
-        if let Some(mut ord) = self.take_by_id(order_id) {
-            ord.price = new_price;
-            let idx = self.find_chunk(&ord);
-            self.insert_in_chunk(idx, ord);
+    /// Insert an order into the appropriate chunk.
+    fn remove_from_chunk(&mut self, idx: usize, order: &Order) {
+        assert!(idx < self.chunks.len(), "chunk index out of bounds!");
+        let chunk = &mut self.chunks[idx];
+        if let Ok(pos) = chunk.binary_search_by(|o| C::cmp(o, order)) {
+            chunk.remove(pos);
+            if chunk.is_empty() {
+                self.chunks.remove(idx);
+            }
         }
     }
 
-    /// Public remove.
-    pub fn remove(&mut self, order_id: i32) {
-        let _ = self.take_by_id(order_id);
+    /// Insert a new order into the book.
+    pub fn insert(&mut self, order: Order) {
+        self.map.insert(order.order_id, order.clone());
+        self.insert_in_chunk(self.find_chunk(&order), order);
     }
 
-    /// Print all chunks in order.
+    /// Remove an order by id.
+    pub fn remove_by_id(&mut self, order_id: i32) -> Option<Order> {
+        // lookup in map to get the existing Order, then remove it from its chunk
+        self.map.remove(&order_id).map(|order| {
+            self.remove_from_chunk(self.find_chunk(&order), &order);
+            order // Return order for use in update.
+        })
+    }
+
+    /// Update an order’s price.
+    /// If there is an existing order with the given id, remove it and then
+    /// insert a new order with the updated price.
+    pub fn update(&mut self, order_id: i32, new_price: i32) {
+        self.remove_by_id(order_id)
+            .map(|order| self.insert(order.update(new_price)));
+    }
+
+    /// Print all orders in ascending “chunks” order.
     pub fn print(&self) {
         for chunk in &self.chunks {
             for o in chunk {
@@ -97,9 +111,9 @@ impl<C: OrderComparator> SortedOrders<C> {
         }
     }
 
-    /// Empty if no chunks or all chunks empty.
+    /// True iff empty.
     pub fn is_empty(&self) -> bool {
-        self.chunks.iter().all(Vec::is_empty)
+        self.map.is_empty()
     }
 }
 
@@ -107,22 +121,20 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let silent = args.contains(&"--silent".to_string());
     let input: Box<dyn BufRead> = {
-        if let Some(pos) = args.iter().position(|arg| arg == "-i" || arg == "--input") {
-            if pos + 1 < args.len() {
-                let file = std::fs::File::open(&args[pos + 1]).expect("Failed to open input file");
-                Box::new(io::BufReader::new(file))
-            } else {
-                panic!("No file provided after -i/--input");
-            }
+        if let Some(pos) = args.iter().position(|a| a == "-i" || a == "--input") {
+            let file = std::fs::File::open(&args[pos + 1]).expect("Failed to open input file");
+            Box::new(io::BufReader::new(file))
         } else {
             Box::new(io::BufReader::new(io::stdin()))
         }
     };
 
-    let mut buys: SortedOrders<BuyCmp> = SortedOrders::new();
-    let mut sells: SortedOrders<SellCmp> = SortedOrders::new();
-    let mut next_id = 0;
+    // choose your chunk size; 1024 is just an example; profiling should guide this choice
+    let max_chunk_size = 1024;
+    let mut buys = SortedOrders::<BuyCmp>::new(max_chunk_size);
+    let mut sells = SortedOrders::<SellCmp>::new(max_chunk_size);
 
+    let mut next_id = 0;
     for event in parse_events(input) {
         match event {
             Event::Create {
@@ -143,8 +155,8 @@ fn main() {
                 sells.update(id, new_price);
             }
             Event::Remove { id } => {
-                buys.remove(id);
-                sells.remove(id);
+                buys.remove_by_id(id);
+                sells.remove_by_id(id);
             }
             Event::Bids => {
                 if !buys.is_empty() && !silent {

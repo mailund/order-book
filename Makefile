@@ -10,12 +10,12 @@ OTHER_SUBDIRS := $(filter-out $(LIBDIR), $(SUBDIRS))
 # Build everything
 all: $(LIBDIR) $(OTHER_SUBDIRS)
 
-# Build the lib directory with a printed message
+# Build the lib directory 
 $(LIBDIR):
 	@echo "🔧 Building $(LIBDIR)..."
 	@$(MAKE) -C $@
 
-# Build all other subdirectories with messages, ensuring lib is first
+# Build all other subdirectories, ensuring lib is first
 $(OTHER_SUBDIRS): | $(LIBDIR)
 	@echo "🔧 Building $@..."
 	@$(MAKE) -C $@

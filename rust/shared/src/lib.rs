@@ -25,6 +25,16 @@ impl Order {
             quantity,
         }
     }
+
+    pub fn update(&self, new_price: i32) -> Order {
+        // Create a new Order with the updated price, keeping other fields the same
+        Order {
+            order_id: self.order_id,
+            order_type: self.order_type,
+            price: new_price,
+            quantity: self.quantity,
+        }
+    }
 }
 
 pub enum Event {
@@ -90,6 +100,7 @@ impl OrderComparator for BuyCmp {
         b.price
             .cmp(&a.price)
             .then_with(|| b.quantity.cmp(&a.quantity))
+            .then_with(|| a.order_id.cmp(&b.order_id))
     }
 }
 
@@ -102,5 +113,6 @@ impl OrderComparator for SellCmp {
         a.price
             .cmp(&b.price)
             .then_with(|| a.quantity.cmp(&b.quantity))
+            .then_with(|| a.order_id.cmp(&b.order_id))
     }
 }

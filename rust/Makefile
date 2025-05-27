@@ -6,7 +6,7 @@ build:
 	cargo build --release --workspace
 
 debug:
-	cargo build --workspace
+	RUSTFLAGS="-C debuginfo=2" cargo build --workspace
 
 test:
 	cargo test --workspace

@@ -17,4 +17,5 @@ tools=(
   c_radix_on_query_bytes   "c/radix_sorted_on_query/bytes"
   rust_sorted              "rust/target/release/sorted"
   rust_blocks              "rust/target/release/blocks"
+  rust_blocks_and_table    "rust/target/release/blocks_and_table"
 )

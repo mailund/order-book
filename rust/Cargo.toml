@@ -3,5 +3,6 @@ members = [
     "shared",
     "sorted",
     "blocks",
+    "blocks_and_table",
 ]
 resolver = "2"
