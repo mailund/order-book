@@ -214,7 +214,11 @@ throttle_jobs() {
     sleep 0.05
     local -a alive=()
     for pid in "${tmpjobs[@]}"; do
-      kill -0 $pid 2>/dev/null && alive+=($pid)
+      if kill -0 "$pid" 2>/dev/null; then
+        alive+=("$pid")
+      else
+        wait "$pid" || { echo "❌ Job $pid failed — aborting." >&2; exit 1; }
+      fi
     done
     tmpjobs=("${alive[@]}")
   done
@@ -228,6 +232,8 @@ run_generic() {
   local label=$1
   local -a tool_list=("${(@P)2}")   # don’t shadow the global “tools”
   local start=$3 end=$4 step=$5 csv=$6
+
+  print -P "%F{cyan}⚙️  Measuring ${label}…%f"
 
   echo "tool,N,duration" >| "$csv"
   local Ns=( {${start}..${end}..${step}} )
@@ -243,10 +249,11 @@ run_generic() {
       (( count++ ))
       [[ $verbose == false ]] && draw_progress $label $count $total
 
+      throttle_jobs
+
       local tmpf="$tempdir/${label}.${tool}.${N}.csv"
       measure_tool "$tool" "$N" "$tmpf" & 
       tmpjobs+=($!)
-      # throttle_jobs
     done
 
     # wait for all of them, failing fast on any error
@@ -315,10 +322,14 @@ make -s || { print -P "%F{red}❌ Build failed%f"; exit 1 }
 
 # warm-up
 print -P "%F{cyan}🔄 Cold-start warm-up…%f"
-for t in "${small[@]}" "${medium[@]}" "${large[@]}" "${huge[@]}"; do
-  printf "  %-30s … " "$t"
+unique_tools=($(echo "${small[@]}" "${medium[@]}" "${large[@]}" "${huge[@]}" | tr ' ' '\n' | sort -u))
+count=0
+total=${#unique_tools[@]}
+for t in "${unique_tools[@]}"; do
+  count=$((count+1))
   eval "${tools[$t]}" < /dev/null &>/dev/null
-  print -P "%F{green}ok%f"
+  [[ $verbose == false ]] && draw_progress "Warm-up" $count $total
+  [[ $verbose == true ]] && { printf "  %-30s … " "$t" ; print -P "%F{green}ok%f"; }
 done
 echo
 
@@ -334,6 +345,7 @@ test_data="$tempdir/test_data.txt"
 (( ! plot_huge_explicit ))   && plot_huge=$run_huge
 
 # run & plot each
+
 [ $run_small  = true ] && measure_small
 [ $plot_small = true ] && plot_small
 
