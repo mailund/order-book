@@ -7,23 +7,20 @@ use std::marker::PhantomData;
 use shared::{parse_events, BuyCmp, Event, Order, OrderComparator, OrderType, SellCmp};
 
 /// Chunked, sorted order book with embedded id→Order map.
-pub struct SortedOrders<C: OrderComparator> {
+pub struct SortedOrders<C: OrderComparator, const MAX_CHUNK_SIZE: usize = 128> {
     /// Each chunk is individually sorted.
     chunks: Vec<Vec<Order>>,
     /// Map from order_id → Order, for O(1) lookup.
     map: HashMap<i32, Order>,
-    /// Maximum number of orders per chunk before splitting.
-    max_chunk_size: usize,
     _cmp: PhantomData<C>,
 }
 
-impl<C: OrderComparator> SortedOrders<C> {
+impl<C: OrderComparator, const MAX_CHUNK_SIZE: usize> SortedOrders<C, MAX_CHUNK_SIZE> {
     /// Create an empty book.
-    pub fn new(max_chunk_size: usize) -> Self {
+    pub fn new() -> Self {
         SortedOrders {
             chunks: Vec::new(),
             map: HashMap::default(),
-            max_chunk_size,
             _cmp: PhantomData,
         }
     }
@@ -44,39 +41,52 @@ impl<C: OrderComparator> SortedOrders<C> {
             .partition_point(|chunk| C::cmp(chunk.last().unwrap(), order) == Ordering::Less)
     }
 
+    /// Split a chunk if it exceeds the maximum size.
+    /// Returns the (new) index where order belongs. This depends on the break point
+    /// of the chunk and can either be the input idx or idx + 1 if we added a new
+    /// chunk and order is larger than the break point.
+    fn maybe_split_chunk(&mut self, idx: usize, order: &Order) -> usize {
+        if self.chunks[idx].len() >= MAX_CHUNK_SIZE {
+            let chunk = &mut self.chunks[idx];
+            let mid = chunk.len() / 2;
+
+            // Perform the split manually to control capacity
+            let mut sibling = Vec::with_capacity(MAX_CHUNK_SIZE);
+            sibling.extend(chunk.drain(mid..));
+
+            self.chunks.insert(idx + 1, sibling);
+
+            // Decide where the order should go
+            if C::cmp(self.chunks[idx].last().unwrap(), order) == Ordering::Less {
+                return idx + 1;
+            }
+        }
+        idx
+    }
+
     /// Insert into a single chunk, keeping it sorted and splitting if too large.
-    fn insert_in_chunk(&mut self, idx: usize, order: &Order) {
+    fn insert_in_chunk(&mut self, mut idx: usize, order: &Order) {
         if self.chunks.is_empty() {
-            // If there are no chunks, we can just create the first one.
-            self.chunks.push(vec![order.clone()]);
+            // The entire book is empty, so create a new single chunk for it.
+            let mut chunk = Vec::with_capacity(MAX_CHUNK_SIZE);
+            chunk.push(order.clone());
+            self.chunks.push(chunk);
             return;
         }
 
-        // Either append to the last chunk or insert into the appropriate chunk
-        // and get the chunk for resizing.
-        let chunk = if idx == self.chunks.len() {
-            // If idx equals the number of chunks, then the order is larger
-            // than any currently in the vector.
-            // If the order is larger than the last chunk, we can append it.
-            let chunk = self.chunks.last_mut().unwrap();
-            chunk.push(order.clone());
-            chunk
+        if idx == self.chunks.len() {
+            // Order is the largest we have so far. It goes at the end of the last chunk
+            // which is at idx - 1.
+            idx = self.maybe_split_chunk(idx - 1, order);
+            self.chunks[idx].push(order.clone()); // Insert at end of last chunk
         } else {
-            // Insert the order into the appropriate chunk.
-            let chunk = &mut self.chunks[idx];
-            let pos = chunk
+            // Binary search for insertion point and then insert it there.
+            idx = self.maybe_split_chunk(idx, order);
+            let pos = self.chunks[idx]
                 .binary_search_by(|o| C::cmp(o, order))
                 .unwrap_or_else(|x| x);
-            chunk.insert(pos, order.clone());
-            chunk
-        };
-
-        // split the chunk if it is now too big
-        if chunk.len() > self.max_chunk_size {
-            let mid = chunk.len() / 2;
-            let sibling = chunk.split_off(mid);
-            self.chunks.insert(idx + 1, sibling);
-        };
+            self.chunks[idx].insert(pos, order.clone());
+        }
     }
 
     /// Insert an order into the appropriate chunk.
@@ -141,10 +151,8 @@ fn main() {
         }
     };
 
-    // choose your chunk size; 1024 is just an example; profiling should guide this choice
-    let max_chunk_size = 1024;
-    let mut buys = SortedOrders::<BuyCmp>::new(max_chunk_size);
-    let mut sells = SortedOrders::<SellCmp>::new(max_chunk_size);
+    let mut buys = SortedOrders::<BuyCmp>::new();
+    let mut sells = SortedOrders::<SellCmp>::new();
 
     let mut next_id = 0;
     for event in parse_events(input) {
