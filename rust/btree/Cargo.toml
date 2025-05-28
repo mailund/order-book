@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 shared = { path = "../shared" }
+fxhash = "0.2"  # or `ahash`

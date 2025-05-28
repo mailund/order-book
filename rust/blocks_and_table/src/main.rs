@@ -1,5 +1,5 @@
+use fxhash::FxHashMap as HashMap;
 use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::env;
 use std::io::{self, BufRead};
 use std::marker::PhantomData;
@@ -22,7 +22,7 @@ impl<C: OrderComparator> SortedOrders<C> {
     pub fn new(max_chunk_size: usize) -> Self {
         SortedOrders {
             chunks: Vec::new(),
-            map: HashMap::new(),
+            map: HashMap::default(),
             max_chunk_size,
             _cmp: PhantomData,
         }
@@ -45,26 +45,38 @@ impl<C: OrderComparator> SortedOrders<C> {
     }
 
     /// Insert into a single chunk, keeping it sorted and splitting if too large.
-    fn insert_in_chunk(&mut self, idx: usize, order: Order) {
-        if idx == self.chunks.len() {
-            // The order is the largest we have see so far, put it in a new chunk
-            // past all the existing chunks.
-            self.chunks.push(vec![order]);
+    fn insert_in_chunk(&mut self, idx: usize, order: &Order) {
+        if self.chunks.is_empty() {
+            // If there are no chunks, we can just create the first one.
+            self.chunks.push(vec![order.clone()]);
+            return;
+        }
+
+        // Either append to the last chunk or insert into the appropriate chunk
+        // and get the chunk for resizing.
+        let chunk = if idx == self.chunks.len() {
+            // If idx equals the number of chunks, then the order is larger
+            // than any currently in the vector.
+            // If the order is larger than the last chunk, we can append it.
+            let chunk = self.chunks.last_mut().unwrap();
+            chunk.push(order.clone());
+            chunk
         } else {
             // Insert the order into the appropriate chunk.
             let chunk = &mut self.chunks[idx];
             let pos = chunk
-                .binary_search_by(|o| C::cmp(o, &order))
+                .binary_search_by(|o| C::cmp(o, order))
                 .unwrap_or_else(|x| x);
-            chunk.insert(pos, order);
+            chunk.insert(pos, order.clone());
+            chunk
+        };
 
-            // split the chunk if it is now too big
-            if chunk.len() > self.max_chunk_size {
-                let mid = chunk.len() / 2;
-                let sibling = chunk.split_off(mid);
-                self.chunks.insert(idx + 1, sibling);
-            }
-        }
+        // split the chunk if it is now too big
+        if chunk.len() > self.max_chunk_size {
+            let mid = chunk.len() / 2;
+            let sibling = chunk.split_off(mid);
+            self.chunks.insert(idx + 1, sibling);
+        };
     }
 
     /// Insert an order into the appropriate chunk.
@@ -80,9 +92,9 @@ impl<C: OrderComparator> SortedOrders<C> {
     }
 
     /// Insert a new order into the book.
-    pub fn insert(&mut self, order: Order) {
+    pub fn insert(&mut self, order: &Order) {
         self.map.insert(order.order_id, order.clone());
-        self.insert_in_chunk(self.find_chunk(&order), order);
+        self.insert_in_chunk(self.find_chunk(order), order);
     }
 
     /// Remove an order by id.
@@ -97,9 +109,9 @@ impl<C: OrderComparator> SortedOrders<C> {
     /// Update an order’s price.
     /// If there is an existing order with the given id, remove it and then
     /// insert a new order with the updated price.
-    pub fn update(&mut self, order_id: i32, new_price: i32) {
+    pub fn update(&mut self, order_id: i32, new_price: i32) -> Option<()> {
         self.remove_by_id(order_id)
-            .map(|order| self.insert(order.update(new_price)));
+            .map(|order| self.insert(&order.update(new_price)))
     }
 
     /// Print all orders in ascending “chunks” order.
@@ -145,18 +157,17 @@ fn main() {
                 let o = Order::new(next_id, order_type, price, quantity);
                 next_id += 1;
                 if o.order_type == OrderType::Buy {
-                    buys.insert(o);
+                    buys.insert(&o);
                 } else {
-                    sells.insert(o);
+                    sells.insert(&o);
                 }
             }
             Event::Update { id, new_price } => {
-                buys.update(id, new_price);
-                sells.update(id, new_price);
+                buys.update(id, new_price)
+                    .or_else(|| sells.update(id, new_price));
             }
             Event::Remove { id } => {
-                buys.remove_by_id(id);
-                sells.remove_by_id(id);
+                buys.remove_by_id(id).or_else(|| sells.remove_by_id(id));
             }
             Event::Bids => {
                 if !buys.is_empty() && !silent {

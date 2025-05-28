@@ -1,5 +1,5 @@
+use fxhash::FxHashMap as HashMap;
 use std::collections::BTreeSet;
-use std::collections::HashMap;
 use std::env;
 use std::io::{self, BufRead};
 use std::marker::PhantomData;
@@ -18,7 +18,7 @@ impl<C: OrderComparator> SortedOrders<C> {
     pub fn new() -> Self {
         SortedOrders {
             tree: BTreeSet::new(),
-            map: HashMap::new(),
+            map: HashMap::default(),
             _cmp: PhantomData,
         }
     }
@@ -41,9 +41,9 @@ impl<C: OrderComparator> SortedOrders<C> {
     /// Update an order’s price.
     /// If there is an existing order with the given id, remove it and then
     /// insert a new order with the updated price.
-    pub fn update(&mut self, order_id: i32, new_price: i32) {
+    pub fn update(&mut self, order_id: i32, new_price: i32) -> Option<()> {
         self.remove_by_id(order_id)
-            .map(|order| self.insert(order.update(new_price)));
+            .map(|order| self.insert(order.update(new_price)))
     }
 
     /// Print all orders in ascending “chunks” order.
@@ -91,12 +91,11 @@ fn main() {
                 }
             }
             Event::Update { id, new_price } => {
-                buys.update(id, new_price);
-                sells.update(id, new_price);
+                buys.update(id, new_price)
+                    .or_else(|| sells.update(id, new_price));
             }
             Event::Remove { id } => {
-                buys.remove_by_id(id);
-                sells.remove_by_id(id);
+                buys.remove_by_id(id).or_else(|| sells.remove_by_id(id));
             }
             Event::Bids => {
                 if !buys.is_empty() && !silent {
