@@ -3,7 +3,7 @@
 all: build
 
 build:
-	cargo build --release --workspace
+	RUSTFLAGS="-C debuginfo=2" cargo build --release --workspace
 
 debug:
 	RUSTFLAGS="-C debuginfo=2" cargo build --workspace

@@ -42,9 +42,9 @@ impl<C: OrderComparator, const MAX_CHUNK_SIZE: usize> SortedOrders<C, MAX_CHUNK_
     }
 
     /// Split a chunk if it exceeds the maximum size.
-    /// Returns the (new) index where order belongs. This depends on the break point
+    /// Returns the (new) index where the order belongs. This depends on the break point
     /// of the chunk and can either be the input idx or idx + 1 if we added a new
-    /// chunk and order is larger than the break point.
+    /// chunk and the order is larger than the break point.
     fn maybe_split_chunk(&mut self, idx: usize, order: &Order) -> usize {
         if self.chunks[idx].len() >= MAX_CHUNK_SIZE {
             let chunk = &mut self.chunks[idx];
@@ -80,9 +80,10 @@ impl<C: OrderComparator, const MAX_CHUNK_SIZE: usize> SortedOrders<C, MAX_CHUNK_
             idx = self.maybe_split_chunk(idx - 1, order);
             self.chunks[idx].push(order.clone()); // Insert at end of last chunk
         } else {
-            // Binary search for insertion point and then insert it there.
+            //Perform a binary search to find the insertion point and then insert the element there.
             idx = self.maybe_split_chunk(idx, order);
             let pos = self.chunks[idx]
+                // This search might be faster with linear search
                 .binary_search_by(|o| C::cmp(o, order))
                 .unwrap_or_else(|x| x);
             self.chunks[idx].insert(pos, order.clone());
@@ -107,9 +108,9 @@ impl<C: OrderComparator, const MAX_CHUNK_SIZE: usize> SortedOrders<C, MAX_CHUNK_
         self.insert_in_chunk(self.find_chunk(order), order);
     }
 
-    /// Remove an order by id.
+    /// Remove an order by ID.
     pub fn remove_by_id(&mut self, order_id: i32) -> Option<Order> {
-        // lookup in map to get the existing Order, then remove it from its chunk
+        // lookup in the map to get the existing Order, then remove it from its chunk
         self.map.remove(&order_id).map(|order| {
             self.remove_from_chunk(self.find_chunk(&order), &order);
             order // Return order for use in update.
@@ -117,7 +118,7 @@ impl<C: OrderComparator, const MAX_CHUNK_SIZE: usize> SortedOrders<C, MAX_CHUNK_
     }
 
     /// Update an order’s price.
-    /// If there is an existing order with the given id, remove it and then
+    /// If there is an existing order with the given ID, remove it and then
     /// insert a new order with the updated price.
     pub fn update(&mut self, order_id: i32, new_price: i32) -> Option<()> {
         self.remove_by_id(order_id)
